@@ -1,10 +1,142 @@
+import "dotenv/config";
+import { randomUUID } from "crypto";
+import { Readable } from "stream";
+
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { createPrismaClient, MediaKind } from "@oneclicktrend/database";
 import express from "express";
 
+import { BUCKET, s3, s3Presign } from "./s3";
+
+const prisma = createPrismaClient();
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
 
+app.use(express.json());
+
 app.get("/hello", (_req, res) => {
   res.json({ message: "hello world" });
+});
+
+app.get("/characters", async (_req, res) => {
+  const characters = await prisma.character.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { _count: { select: { media: true } } },
+  });
+  res.json(characters);
+});
+
+app.post("/characters", async (req, res) => {
+  const name = String(req.body?.name ?? "").trim();
+  if (!name) {
+    res.status(400).json({ error: "name required" });
+    return;
+  }
+  const character = await prisma.character.create({ data: { name } });
+  res.status(201).json(character);
+});
+
+app.get("/characters/:id", async (req, res) => {
+  const character = await prisma.character.findUnique({
+    where: { id: req.params.id },
+    include: { media: { orderBy: { createdAt: "asc" } } },
+  });
+  if (!character) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  res.json({
+    ...character,
+    media: character.media.map((m) => ({ ...m, url: `/media/${m.id}` })),
+  });
+});
+
+app.post("/characters/:id/media", async (req, res) => {
+  const character = await prisma.character.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!character) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+
+  const files: Array<{ filename?: string; contentType?: string }> =
+    req.body?.files ?? [];
+  if (!Array.isArray(files) || files.length === 0) {
+    res.status(400).json({ error: "files required" });
+    return;
+  }
+
+  const created = [];
+  for (const file of files) {
+    const filename = file.filename ?? "media";
+    const contentType = file.contentType ?? "application/octet-stream";
+    const s3Key = `characters/${character.id}/${randomUUID()}-${filename}`;
+
+    const asset = await prisma.mediaAsset.create({
+      data: {
+        characterId: character.id,
+        kind: contentType.startsWith("video/")
+          ? MediaKind.VIDEO
+          : MediaKind.PHOTO,
+        s3Key,
+        mimeType: contentType,
+      },
+    });
+
+    const uploadUrl = await getSignedUrl(
+      s3Presign,
+      new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: s3Key,
+        ContentType: contentType,
+      }),
+      { expiresIn: 900 },
+    );
+
+    created.push({ id: asset.id, kind: asset.kind, uploadUrl });
+  }
+
+  res.status(201).json(created);
+});
+
+app.get("/media/:id", async (req, res) => {
+  const asset = await prisma.mediaAsset.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!asset) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+
+  // Pass Range through so AVPlayer can seek while streaming video.
+  const range = req.headers.range;
+  const obj = await s3.send(
+    new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: asset.s3Key,
+      ...(range && { Range: range }),
+    }),
+  );
+
+  res.status(range ? 206 : 200);
+  res.setHeader("Content-Type", asset.mimeType);
+  res.setHeader("Accept-Ranges", "bytes");
+  if (obj.ContentLength != null) {
+    res.setHeader("Content-Length", obj.ContentLength);
+  }
+  if (obj.ContentRange) {
+    res.setHeader("Content-Range", obj.ContentRange);
+  }
+  (obj.Body as Readable).pipe(res);
+});
+
+app.get("/generations", async (_req, res) => {
+  const generations = await prisma.generation.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+  res.json(generations);
 });
 
 app.listen(PORT, "0.0.0.0", () => {

@@ -26,7 +26,20 @@ configure-api:
 	@IP=$$(ipconfig getifaddr en0); \
 	if [ -z "$$IP" ]; then echo "No LAN IP found on en0 — is Wi-Fi on?"; exit 1; fi; \
 	sed -i '' "s|http://[^\"]*|http://$$IP:3000|" $(CONFIG); \
-	echo "API_URL -> http://$$IP:3000"
+	sed -i '' "s|^S3_PUBLIC_ENDPOINT=.*|S3_PUBLIC_ENDPOINT=http://$$IP:4566|" backend/api/.env; \
+	echo "API_URL -> http://$$IP:3000  S3_PUBLIC_ENDPOINT -> http://$$IP:4566"
+
+## db-up: start postgres + localstack (waits until healthy, bucket ready)
+db-up:
+	cd backend/api && docker compose up -d --wait
+
+## db-down: stop postgres + localstack
+db-down:
+	cd backend/api && docker compose down
+
+## migrate: run prisma migrations against the local db
+migrate: db-up
+	cd packages/database && npx prisma migrate dev
 
 ## iphone: build a Release app and install it on the connected iPhone (no Metro needed)
 iphone: configure-api

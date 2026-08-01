@@ -3,6 +3,8 @@ dist/
 .turbo/
 .env
 *.log
+backend/api/localstack-data/
+packages/database/generated/
 
 # iOS
 frontend/mobile/ios/Pods/
