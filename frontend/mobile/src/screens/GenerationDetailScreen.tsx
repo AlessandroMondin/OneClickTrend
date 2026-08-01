@@ -81,8 +81,25 @@ function PhotoCarousel({
     setBusy("download");
     try {
       const fileUrl = await downloadPhotoToCache(id, page);
-      await CameraRoll.saveAsset(fileUrl, { type: "photo" });
-      Alert.alert("Saved", `Photo ${page + 1} saved to your photo library.`);
+      try {
+        await CameraRoll.saveAsset(fileUrl, { type: "photo" });
+        Alert.alert("Saved", `Photo ${page + 1} saved to your photo library.`);
+      } catch (saveError) {
+        // Usually a denied Photos permission — fall back to the share sheet,
+        // whose own "Save Image" does not need the add-photos permission.
+        console.error("saveAsset failed:", JSON.stringify(saveError), String(saveError));
+        Alert.alert(
+          "Could not save directly",
+          "Allow Photos access in Settings → OneClickTrend, or use the share sheet's Save Image.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open share sheet",
+              onPress: () => Share.share({ url: fileUrl }),
+            },
+          ],
+        );
+      }
     } catch (e) {
       console.error("photo download failed:", e instanceof Error ? e.message : e);
       Alert.alert("Download failed", e instanceof Error ? e.message : String(e));
