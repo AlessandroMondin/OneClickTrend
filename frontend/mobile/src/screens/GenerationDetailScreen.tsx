@@ -112,7 +112,6 @@ function PhotoCarousel({
           style={styles.hiddenAudio}
           paused={!soundOn}
           repeat
-          audioOnly
           ignoreSilentSwitch="ignore"
         />
       )}
