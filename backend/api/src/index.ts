@@ -416,6 +416,27 @@ app.post("/shared-links/:id/animate", wrap(async (req, res) => {
   res.status(201).json(generation);
 }));
 
+app.delete("/generations/:id", wrap(async (req, res) => {
+  const generation = await prisma.generation.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!generation) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  await prisma.generation.delete({ where: { id: generation.id } });
+  if (generation.outputS3Key) {
+    try {
+      await s3.send(
+        new DeleteObjectCommand({ Bucket: BUCKET, Key: generation.outputS3Key }),
+      );
+    } catch (err) {
+      apiLog(`WARN could not delete s3 object ${generation.outputS3Key}: ${err}`);
+    }
+  }
+  res.status(204).end();
+}));
+
 app.get("/generations/:id/video", wrap(async (req, res) => {
   const generation = await prisma.generation.findUnique({
     where: { id: req.params.id },

@@ -130,6 +130,15 @@ export function generationVideoUrl(id: string): string {
   return `${API_URL}/generations/${id}/video`;
 }
 
+export async function deleteGeneration(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/generations/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    throw new Error(`Delete failed: ${res.status}`);
+  }
+}
+
 export function listGenerations(): Promise<Generation[]> {
   return fetch(`${API_URL}/generations`).then((r) => json<Generation[]>(r));
 }

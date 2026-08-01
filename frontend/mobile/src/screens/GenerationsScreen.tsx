@@ -1,7 +1,9 @@
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -9,7 +11,11 @@ import {
 import Video from "react-native-video";
 import { useFocusEffect } from "@react-navigation/native";
 
-import { generationVideoUrl, listGenerations } from "../api/client";
+import {
+  deleteGeneration,
+  generationVideoUrl,
+  listGenerations,
+} from "../api/client";
 import type { Generation } from "../types";
 
 function GenerationsScreen() {
@@ -32,6 +38,28 @@ function GenerationsScreen() {
       return () => clearInterval(interval);
     }, []),
   );
+
+  const confirmDelete = (id: string) => {
+    Alert.alert("Delete generation?", undefined, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteGeneration(id);
+            setGenerations((prev) => prev.filter((g) => g.id !== id));
+          } catch (e) {
+            console.error(
+              "delete generation failed:",
+              e instanceof Error ? e.message : e,
+            );
+            Alert.alert("Failed", e instanceof Error ? e.message : String(e));
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -57,9 +85,18 @@ function GenerationsScreen() {
                   {item.status}
                 </Text>
               </View>
-              <Text style={styles.date}>
-                {new Date(item.createdAt).toLocaleString()}
-              </Text>
+              <View style={styles.headerRight}>
+                <Text style={styles.date}>
+                  {new Date(item.createdAt).toLocaleString()}
+                </Text>
+                <Pressable
+                  style={styles.deleteButton}
+                  hitSlop={6}
+                  onPress={() => confirmDelete(item.id)}
+                >
+                  <Text style={styles.deleteText}>✕</Text>
+                </Pressable>
+              </View>
             </View>
             {item.sharedLink && (
               <Text style={styles.source} numberOfLines={1}>
@@ -105,6 +142,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 10 },
+  deleteButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#e5e5ea",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteText: { color: "#c00", fontSize: 12, fontWeight: "700" },
   status: { fontSize: 16, fontWeight: "600" },
   statusFailed: { color: "#c00" },
   statusCompleted: { color: "#0a7d33" },

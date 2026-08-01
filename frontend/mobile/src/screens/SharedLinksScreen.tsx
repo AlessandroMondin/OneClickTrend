@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   Linking,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -17,9 +18,11 @@ import {
   listCharacters,
   listSharedLinks,
   markSharedLinksSeen,
+  mediaUrl,
   SharedLink,
 } from "../api/client";
 import { useSharedLinksContext } from "../context";
+import type { Character } from "../types";
 
 function SourceIcon({
   source,
@@ -82,39 +85,46 @@ function SharedLinksScreen() {
     }
   };
 
+  const [pickerLink, setPickerLink] = useState<SharedLink | null>(null);
+  const [characters, setCharacters] = useState<Character[]>([]);
+
   const animate = async (link: SharedLink) => {
     try {
-      const characters = await listCharacters();
-      if (characters.length === 0) {
+      const list = await listCharacters();
+      if (list.length === 0) {
         Alert.alert(
           "No characters",
           "Create a character with at least one picture first.",
         );
         return;
       }
-      Alert.alert("Animate with which character?", undefined, [
-        ...characters.map((c) => ({
-          text: c.name,
-          onPress: () => {
-            Alert.alert(
-              `Animate with ${c.name}?`,
-              "This runs the render pipeline and spends credits.",
-              [
-                { text: "Cancel", style: "cancel" as const },
-                {
-                  text: "Animate",
-                  onPress: () => startAnimation(link, c.id),
-                },
-              ],
-            );
-          },
-        })),
-        { text: "Cancel", style: "cancel" as const },
-      ]);
+      setCharacters(list);
+      setPickerLink(link);
     } catch (e) {
       console.error("character load failed:", e instanceof Error ? e.message : e);
       Alert.alert("Failed", e instanceof Error ? e.message : String(e));
     }
+  };
+
+  const pickCharacter = (character: Character) => {
+    const link = pickerLink;
+    if (!link) {
+      return;
+    }
+    Alert.alert(
+      `Animate with ${character.name}?`,
+      "This runs the render pipeline and spends credits.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Animate",
+          onPress: () => {
+            setPickerLink(null);
+            startAnimation(link, character.id);
+          },
+        },
+      ],
+    );
   };
 
   const confirmDelete = (link: SharedLink) => {
@@ -184,6 +194,57 @@ function SharedLinksScreen() {
           </Text>
         }
       />
+
+      <Modal
+        visible={pickerLink != null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerLink(null)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setPickerLink(null)}
+        >
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Animate with which character?</Text>
+            <FlatList
+              data={characters}
+              keyExtractor={(c) => c.id}
+              renderItem={({ item }) => (
+                <Pressable
+                  style={styles.characterRow}
+                  onPress={() => pickCharacter(item)}
+                >
+                  {item.thumbnailUrl ? (
+                    <Image
+                      source={{ uri: mediaUrl(item.thumbnailUrl) }}
+                      style={styles.characterAvatar}
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        styles.characterAvatar,
+                        styles.characterAvatarPlaceholder,
+                      ]}
+                    >
+                      <Text style={styles.characterInitial}>
+                        {item.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={styles.characterName}>{item.name}</Text>
+                </Pressable>
+              )}
+            />
+            <Pressable
+              style={styles.modalCancel}
+              onPress={() => setPickerLink(null)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -246,6 +307,44 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   error: { color: "#c00", textAlign: "center", padding: 8 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    padding: 32,
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    maxHeight: "70%",
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  characterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 10,
+  },
+  characterAvatar: { width: 44, height: 44, borderRadius: 22 },
+  characterAvatarPlaceholder: {
+    backgroundColor: "#ddd",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  characterInitial: { fontSize: 18, fontWeight: "700", color: "#666" },
+  characterName: { fontSize: 16, fontWeight: "500" },
+  modalCancel: {
+    marginTop: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  modalCancelText: { fontSize: 16, color: "#666" },
 });
 
 export default SharedLinksScreen;
