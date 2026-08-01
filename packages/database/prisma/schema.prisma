@@ -33,12 +33,14 @@ model MediaAsset {
 }
 
 model SharedLink {
-  id          String       @id @default(uuid())
-  url         String
-  source      String       @default("other")
-  seen        Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  generations Generation[]
+  id           String       @id @default(uuid())
+  url          String
+  source       String       @default("other")
+  title        String?
+  thumbnailUrl String?
+  seen         Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  generations  Generation[]
 }
 
 model Generation {

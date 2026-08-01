@@ -2,6 +2,7 @@ import React, { useCallback, useState } from "react";
 import {
   Alert,
   FlatList,
+  Image,
   Linking,
   Pressable,
   StyleSheet,
@@ -18,7 +19,16 @@ import {
 } from "../api/client";
 import { useSharedLinksContext } from "../context";
 
-function SourceIcon({ source }: { source: string }) {
+function SourceIcon({
+  source,
+  thumbnailUrl,
+}: {
+  source: string;
+  thumbnailUrl: string | null;
+}) {
+  if (thumbnailUrl) {
+    return <Image source={{ uri: thumbnailUrl }} style={styles.thumbnail} />;
+  }
   if (source === "tiktok") {
     return (
       <View style={[styles.icon, styles.tiktokIcon]}>
@@ -79,13 +89,13 @@ function SharedLinksScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <SourceIcon source={item.source} />
+            <SourceIcon source={item.source} thumbnailUrl={item.thumbnailUrl} />
             <Pressable
               style={styles.linkInfo}
               onPress={() => Linking.openURL(item.url)}
             >
-              <Text style={styles.url} numberOfLines={1}>
-                {item.url}
+              <Text style={styles.url} numberOfLines={2}>
+                {item.title ?? item.url}
               </Text>
               <Text style={styles.date}>
                 {new Date(item.createdAt).toLocaleString()}
@@ -127,6 +137,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  thumbnail: {
+    width: 48,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: "#ddd",
   },
   tiktokIcon: { backgroundColor: "#010101" },
   tiktokGlyph: { color: "#fff", fontSize: 22, fontWeight: "700" },

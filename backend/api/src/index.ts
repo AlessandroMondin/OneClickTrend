@@ -273,6 +273,47 @@ function sourceFromUrl(url: string): string {
   return "other";
 }
 
+// Short links (vm.tiktok.com) must be resolved to the full video URL first —
+// TikTok's oEmbed endpoint rejects short links from non-browser clients.
+async function resolveShortLink(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(5000),
+    });
+    const location = res.headers.get("location");
+    if (location) {
+      return location.split("?")[0];
+    }
+  } catch {
+    // fall through
+  }
+  return url;
+}
+
+// TikTok's public oEmbed endpoint returns thumbnail + title for a video URL.
+async function fetchOembed(
+  url: string,
+): Promise<{ title?: string; thumbnailUrl?: string }> {
+  try {
+    const resolved = await resolveShortLink(url);
+    const res = await fetch(
+      `https://www.tiktok.com/oembed?url=${encodeURIComponent(resolved)}`,
+      { signal: AbortSignal.timeout(5000) },
+    );
+    if (!res.ok) {
+      return {};
+    }
+    const data = (await res.json()) as {
+      title?: string;
+      thumbnail_url?: string;
+    };
+    return { title: data.title, thumbnailUrl: data.thumbnail_url };
+  } catch {
+    return {};
+  }
+}
+
 // The share extension posts shared URLs here; the app shows them in the
 // Shared Links tab with an unread badge.
 app.post("/shared-links", wrap(async (req, res) => {
@@ -281,8 +322,10 @@ app.post("/shared-links", wrap(async (req, res) => {
     res.status(400).json({ error: "url required" });
     return;
   }
+  const source = sourceFromUrl(url);
+  const meta = source === "tiktok" ? await fetchOembed(url) : {};
   const link = await prisma.sharedLink.create({
-    data: { url, source: sourceFromUrl(url) },
+    data: { url, source, ...meta },
   });
   res.status(201).json(link);
 }));
@@ -291,6 +334,22 @@ app.get("/shared-links", wrap(async (_req, res) => {
   const links = await prisma.sharedLink.findMany({
     orderBy: { createdAt: "desc" },
   });
+  // Backfill source + thumbnails for links saved before enrichment existed.
+  for (const link of links) {
+    const source = sourceFromUrl(link.url);
+    if (source === "tiktok" && !link.thumbnailUrl) {
+      const meta = await fetchOembed(link.url);
+      if (meta.thumbnailUrl || source !== link.source) {
+        Object.assign(
+          link,
+          await prisma.sharedLink.update({
+            where: { id: link.id },
+            data: { source, ...meta },
+          }),
+        );
+      }
+    }
+  }
   res.json(links);
 }));
 

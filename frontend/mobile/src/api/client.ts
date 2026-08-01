@@ -92,6 +92,8 @@ export interface SharedLink {
   id: string;
   url: string;
   source: string;
+  title: string | null;
+  thumbnailUrl: string | null;
   seen: boolean;
   createdAt: string;
 }
