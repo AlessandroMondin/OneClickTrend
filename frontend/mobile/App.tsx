@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
-import { Alert, Linking } from "react-native";
+import { Alert, AppState, Linking } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
+
+import { consumeSharedLink, pendingSharedLinks } from "./src/api/client";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -51,13 +53,37 @@ function handleSharedUrl(deepLink: string | null) {
   Alert.alert("Shared link received", shared);
 }
 
+async function checkPendingSharedLinks() {
+  try {
+    const links = await pendingSharedLinks();
+    for (const link of links) {
+      console.log("pending shared link:", link.url);
+      Alert.alert("Shared link received", link.url);
+      await consumeSharedLink(link.id);
+    }
+  } catch (e) {
+    console.warn("pending shared links check failed:", String(e));
+  }
+}
+
 function App(): React.JSX.Element {
   useEffect(() => {
     Linking.getInitialURL().then(handleSharedUrl);
-    const sub = Linking.addEventListener("url", ({ url }) =>
+    const linkSub = Linking.addEventListener("url", ({ url }) =>
       handleSharedUrl(url),
     );
-    return () => sub.remove();
+
+    checkPendingSharedLinks();
+    const stateSub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        checkPendingSharedLinks();
+      }
+    });
+
+    return () => {
+      linkSub.remove();
+      stateSub.remove();
+    };
   }, []);
 
   return (

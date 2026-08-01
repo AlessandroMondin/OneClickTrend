@@ -88,6 +88,23 @@ export async function deleteMedia(id: string): Promise<void> {
   }
 }
 
+export interface SharedLink {
+  id: string;
+  url: string;
+  consumed: boolean;
+  createdAt: string;
+}
+
+export function pendingSharedLinks(): Promise<SharedLink[]> {
+  return fetch(`${API_URL}/shared-links/pending`).then((r) =>
+    json<SharedLink[]>(r),
+  );
+}
+
+export async function consumeSharedLink(id: string): Promise<void> {
+  await fetch(`${API_URL}/shared-links/${id}/consume`, { method: "POST" });
+}
+
 export function listGenerations(): Promise<Generation[]> {
   return fetch(`${API_URL}/generations`).then((r) => json<Generation[]>(r));
 }

@@ -32,6 +32,13 @@ model MediaAsset {
   createdAt   DateTime  @default(now())
 }
 
+model SharedLink {
+  id        String   @id @default(uuid())
+  url       String
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 model Generation {
   id          String     @id @default(uuid())
   characterId String?

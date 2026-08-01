@@ -258,6 +258,33 @@ app.delete("/media/:id", wrap(async (req, res) => {
   res.status(204).end();
 }));
 
+// The share extension posts shared URLs here; the app polls for pending ones.
+app.post("/shared-links", wrap(async (req, res) => {
+  const url = String(req.body?.url ?? "").trim();
+  if (!url) {
+    res.status(400).json({ error: "url required" });
+    return;
+  }
+  const link = await prisma.sharedLink.create({ data: { url } });
+  res.status(201).json(link);
+}));
+
+app.get("/shared-links/pending", wrap(async (_req, res) => {
+  const links = await prisma.sharedLink.findMany({
+    where: { consumed: false },
+    orderBy: { createdAt: "asc" },
+  });
+  res.json(links);
+}));
+
+app.post("/shared-links/:id/consume", wrap(async (req, res) => {
+  await prisma.sharedLink.update({
+    where: { id: req.params.id },
+    data: { consumed: true },
+  });
+  res.status(204).end();
+}));
+
 app.get("/generations", wrap(async (_req, res) => {
   const generations = await prisma.generation.findMany({
     orderBy: { createdAt: "desc" },
