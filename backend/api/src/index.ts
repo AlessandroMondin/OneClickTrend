@@ -11,6 +11,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createPrismaClient, MediaKind } from "@oneclicktrend/database";
 import express from "express";
 
+import { runAnimationJob } from "./animate";
 import { apiLog, appLog, requestLogger } from "./logging";
 import { BUCKET, s3, s3Presign } from "./s3";
 
@@ -371,17 +372,76 @@ app.delete("/shared-links/:id", wrap(async (req, res) => {
 }));
 
 app.post("/shared-links/:id/animate", wrap(async (req, res) => {
+  const characterId = String(req.body?.characterId ?? "");
+  if (!characterId) {
+    res.status(400).json({ error: "characterId required" });
+    return;
+  }
   const link = await prisma.sharedLink.findUnique({
     where: { id: req.params.id },
   });
   if (!link) {
+    res.status(404).json({ error: "shared link not found" });
+    return;
+  }
+  const character = await prisma.character.findUnique({
+    where: { id: characterId },
+    include: {
+      media: {
+        where: { kind: MediaKind.PHOTO },
+        orderBy: { position: "asc" },
+        take: 1,
+      },
+    },
+  });
+  if (!character) {
+    res.status(404).json({ error: "character not found" });
+    return;
+  }
+  const photo = character.media[0];
+  if (!photo) {
+    res.status(400).json({ error: "character has no photo" });
+    return;
+  }
+
+  const generation = await prisma.generation.create({
+    data: {
+      characterId: character.id,
+      sharedLinkId: link.id,
+      status: "running",
+    },
+  });
+  // Fire and forget — status lands on the Generation row.
+  runAnimationJob(generation.id, link, photo);
+  res.status(201).json(generation);
+}));
+
+app.get("/generations/:id/video", wrap(async (req, res) => {
+  const generation = await prisma.generation.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!generation?.outputS3Key) {
     res.status(404).json({ error: "not found" });
     return;
   }
-  const generation = await prisma.generation.create({
-    data: { sharedLinkId: link.id, status: "pending" },
-  });
-  res.status(201).json(generation);
+  const range = req.headers.range;
+  const obj = await s3.send(
+    new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: generation.outputS3Key,
+      ...(range && { Range: range }),
+    }),
+  );
+  res.status(range ? 206 : 200);
+  res.setHeader("Content-Type", "video/mp4");
+  res.setHeader("Accept-Ranges", "bytes");
+  if (obj.ContentLength != null) {
+    res.setHeader("Content-Length", obj.ContentLength);
+  }
+  if (obj.ContentRange) {
+    res.setHeader("Content-Range", obj.ContentRange);
+  }
+  (obj.Body as Readable).pipe(res);
 }));
 
 app.get("/generations", wrap(async (_req, res) => {

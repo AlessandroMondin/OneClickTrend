@@ -48,6 +48,21 @@ Media flow: the app asks `POST /characters/:id/media` for presigned S3 PUT
 URLs, uploads directly to LocalStack, and displays media through the API's
 streaming `GET /media/:id` endpoint (Range supported for video).
 
+## Animation pipeline
+
+Tapping **Animate** on a shared link asks for a character, then the API runs
+the TikTok → Viggle workflow from `scripts/`
+(`pnpm --filter @oneclicktrend/scripts pipeline "<url>" --image <character photo>`),
+uploads the rendered video to S3 and marks the Generation `completed` — it then
+plays inline in My Generations. Requires real API keys:
+
+```bash
+cp scripts/.env.example scripts/.env   # fill APIFY_TOKEN and VIGGLE_API_KEY
+```
+
+Without keys the pipeline fails fast and the Generation shows `failed` with the
+reason. Per-job logs: `logs/animate-<generationId>.log`.
+
 ## Other targets
 
 `make simulator`, `make iphone-debug` (+ `make metro`), `make db-up`,

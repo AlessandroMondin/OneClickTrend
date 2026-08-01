@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import {
   animateSharedLink,
   deleteSharedLink,
+  listCharacters,
   listSharedLinks,
   markSharedLinksSeen,
   SharedLink,
@@ -71,12 +72,47 @@ function SharedLinksScreen() {
     }, [refreshUnseen]),
   );
 
-  const animate = async (link: SharedLink) => {
+  const startAnimation = async (link: SharedLink, characterId: string) => {
     try {
-      await animateSharedLink(link.id);
-      Alert.alert("Animation queued", "Check My Generations.");
+      await animateSharedLink(link.id, characterId);
+      Alert.alert("Animation started", "Check My Generations for progress.");
     } catch (e) {
       console.error("animate failed:", e instanceof Error ? e.message : e);
+      Alert.alert("Failed", e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const animate = async (link: SharedLink) => {
+    try {
+      const characters = await listCharacters();
+      if (characters.length === 0) {
+        Alert.alert(
+          "No characters",
+          "Create a character with at least one picture first.",
+        );
+        return;
+      }
+      Alert.alert("Animate with which character?", undefined, [
+        ...characters.map((c) => ({
+          text: c.name,
+          onPress: () => {
+            Alert.alert(
+              `Animate with ${c.name}?`,
+              "This runs the render pipeline and spends credits.",
+              [
+                { text: "Cancel", style: "cancel" as const },
+                {
+                  text: "Animate",
+                  onPress: () => startAnimation(link, c.id),
+                },
+              ],
+            );
+          },
+        })),
+        { text: "Cancel", style: "cancel" as const },
+      ]);
+    } catch (e) {
+      console.error("character load failed:", e instanceof Error ? e.message : e);
       Alert.alert("Failed", e instanceof Error ? e.message : String(e));
     }
   };

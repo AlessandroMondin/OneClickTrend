@@ -115,10 +115,19 @@ export async function deleteSharedLink(id: string): Promise<void> {
   }
 }
 
-export function animateSharedLink(id: string): Promise<Generation> {
+export function animateSharedLink(
+  id: string,
+  characterId: string,
+): Promise<Generation> {
   return fetch(`${API_URL}/shared-links/${id}/animate`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ characterId }),
   }).then((r) => json<Generation>(r));
+}
+
+export function generationVideoUrl(id: string): string {
+  return `${API_URL}/generations/${id}/video`;
 }
 
 export function listGenerations(): Promise<Generation[]> {
