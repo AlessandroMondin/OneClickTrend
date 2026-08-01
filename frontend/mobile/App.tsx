@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { Alert, Linking } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -37,7 +38,25 @@ function CharactersStack() {
   );
 }
 
+function handleSharedUrl(deepLink: string | null) {
+  if (!deepLink?.startsWith("oneclicktrend://shared")) {
+    return;
+  }
+  const encoded = deepLink.split("url=")[1] ?? "";
+  const shared = decodeURIComponent(encoded);
+  console.log("received shared link:", shared);
+  Alert.alert("Shared link received", shared);
+}
+
 function App(): React.JSX.Element {
+  useEffect(() => {
+    Linking.getInitialURL().then(handleSharedUrl);
+    const sub = Linking.addEventListener("url", ({ url }) =>
+      handleSharedUrl(url),
+    );
+    return () => sub.remove();
+  }, []);
+
   return (
     <NavigationContainer>
       <Tab.Navigator>

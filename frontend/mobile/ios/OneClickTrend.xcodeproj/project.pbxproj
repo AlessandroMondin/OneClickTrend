@@ -10,9 +10,36 @@
 		0C80B921A6F3F58F76C31292 /* libPods-OneClickTrend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-OneClickTrend.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		31189DB66AFC262630E4B289 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		3F620CAC09BB7811782113D5 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8E30110635D84BFAF4140E /* ShareViewController.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		C556EBAC99C31DEEFE01C3C1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60DD77497D1C86DD66D4A5ED /* Foundation.framework */; };
+		D78B72A0FE6C02847D1B3206 /* OneClickTrendShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = CDD5EE2EF1969EF44B835B40 /* OneClickTrendShare.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		68D97E63EA06D3C037BC44E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 015B8C4A14487B4470EA537C;
+			remoteInfo = OneClickTrendShare;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		79CA9968EC0B9B8FCA05C9E5 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D78B72A0FE6C02847D1B3206 /* OneClickTrendShare.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* OneClickTrend.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OneClickTrend.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -22,8 +49,12 @@
 		3B4392A12AC88292D35C810B /* Pods-OneClickTrend.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneClickTrend.debug.xcconfig"; path = "Target Support Files/Pods-OneClickTrend/Pods-OneClickTrend.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-OneClickTrend.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneClickTrend.release.xcconfig"; path = "Target Support Files/Pods-OneClickTrend/Pods-OneClickTrend.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-OneClickTrend.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OneClickTrend.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		60DD77497D1C86DD66D4A5ED /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = OneClickTrend/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = OneClickTrend/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		9D8E30110635D84BFAF4140E /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		CDD5EE2EF1969EF44B835B40 /* OneClickTrendShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = OneClickTrendShare.appex; path = OneClickTrendShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EB20E0C1CCC2B438DA6252AC /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -33,6 +64,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C80B921A6F3F58F76C31292 /* libPods-OneClickTrend.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C367BD3753017E95DC300B40 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C556EBAC99C31DEEFE01C3C1 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -56,8 +95,17 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-OneClickTrend.a */,
+				8018CD686B693F365BB4711D /* iOS */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		8018CD686B693F365BB4711D /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				60DD77497D1C86DD66D4A5ED /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -75,6 +123,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				A2BB5136F02D89B4E96AE290 /* OneClickTrendShare */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -85,8 +134,19 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* OneClickTrend.app */,
+				CDD5EE2EF1969EF44B835B40 /* OneClickTrendShare.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A2BB5136F02D89B4E96AE290 /* OneClickTrendShare */ = {
+			isa = PBXGroup;
+			children = (
+				9D8E30110635D84BFAF4140E /* ShareViewController.swift */,
+				EB20E0C1CCC2B438DA6252AC /* Info.plist */,
+			);
+			name = OneClickTrendShare;
+			path = OneClickTrendShare;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -101,6 +161,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		015B8C4A14487B4470EA537C /* OneClickTrendShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9EB1EC951B3A60B2230610DD /* Build configuration list for PBXNativeTarget "OneClickTrendShare" */;
+			buildPhases = (
+				680FD4E4AA1211D305BC9129 /* Sources */,
+				C367BD3753017E95DC300B40 /* Frameworks */,
+				3A7A4A310F3F166CAF80F389 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OneClickTrendShare;
+			productName = OneClickTrendShare;
+			productReference = CDD5EE2EF1969EF44B835B40 /* OneClickTrendShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		13B07F861A680F5B00A75B9A /* OneClickTrend */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "OneClickTrend" */;
@@ -112,10 +189,12 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				79CA9968EC0B9B8FCA05C9E5 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C17D35EF6E94415D7D325F6A /* PBXTargetDependency */,
 			);
 			name = OneClickTrend;
 			productName = OneClickTrend;
@@ -149,6 +228,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* OneClickTrend */,
+				015B8C4A14487B4470EA537C /* OneClickTrendShare */,
 			);
 		};
 /* End PBXProject section */
@@ -161,6 +241,13 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				31189DB66AFC262630E4B289 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A7A4A310F3F166CAF80F389 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,7 +337,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		680FD4E4AA1211D305BC9129 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F620CAC09BB7811782113D5 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C17D35EF6E94415D7D325F6A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = OneClickTrendShare;
+			target = 015B8C4A14487B4470EA537C /* OneClickTrendShare */;
+			targetProxy = 68D97E63EA06D3C037BC44E2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -310,6 +414,26 @@
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
+		};
+		4A6C905E3EAB87F1BFAF4FBF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U5U6M2S9Z7;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OneClickTrendShare/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.example.OneClickTrend.Share;
+				PRODUCT_NAME = OneClickTrendShare;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
 		};
 		83CBBA201A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -471,6 +595,27 @@
 			};
 			name = Release;
 		};
+		86141FA6A5AB08203DEB9487 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U5U6M2S9Z7;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OneClickTrendShare/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.example.OneClickTrend.Share;
+				PRODUCT_NAME = OneClickTrendShare;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -488,6 +633,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9EB1EC951B3A60B2230610DD /* Build configuration list for PBXNativeTarget "OneClickTrendShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				86141FA6A5AB08203DEB9487 /* Release */,
+				4A6C905E3EAB87F1BFAF4FBF /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
