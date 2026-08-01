@@ -26,9 +26,13 @@ function CharactersStack() {
       <Stack.Screen
         name="AddCharacter"
         component={AddCharacterScreen}
-        options={{ title: "Add a Character" }}
+        options={{ title: "Add a Character", gestureEnabled: false }}
       />
-      <Stack.Screen name="CharacterDetail" component={CharacterDetailScreen} />
+      <Stack.Screen
+        name="CharacterDetail"
+        component={CharacterDetailScreen}
+        options={{ gestureEnabled: false }}
+      />
     </Stack.Navigator>
   );
 }
