@@ -28,6 +28,8 @@ interface Report {
   outputs: Record<string, string>;
   /** Face-swapped carousel images (photo posts only). */
   photoOutputs?: string[];
+  /** The post's sound, when it could be downloaded (photo posts only). */
+  soundOutput?: { path: string; name: string | null; author: string | null };
 }
 
 /**
@@ -47,6 +49,7 @@ export async function runPipeline(input: string, options: RenderOptions = {}): P
   let apifyUsd: number | null = null;
   let viggleCredits: number | null = null;
   let photoOutputs: string[] | undefined;
+  let soundOutput: Report["soundOutput"];
 
   try {
     await track(steps, "check-keys", () => checkKeys(), (keys) => ({
@@ -89,6 +92,14 @@ export async function runPipeline(input: string, options: RenderOptions = {}): P
         }),
       );
       photoOutputs = swapped.paths;
+      if (swapped.soundPath) {
+        soundOutput = {
+          path: swapped.soundPath,
+          name: swapped.soundName,
+          author: swapped.soundAuthor,
+        };
+        outputs.sound = `${swapped.soundName ?? "unknown"} — ${swapped.soundAuthor ?? "?"}`;
+      }
       outputs.swappedImages = `${swapped.count} image(s)`;
       findings.carousel = `Photo carousel: face-swapped ${swapped.count} image(s) with Nano Banana instead of a Viggle render.`;
     } else {
@@ -165,6 +176,7 @@ export async function runPipeline(input: string, options: RenderOptions = {}): P
       findings,
       outputs,
       ...(photoOutputs && { photoOutputs }),
+      ...(soundOutput && { soundOutput }),
     };
 
     if (dir) {

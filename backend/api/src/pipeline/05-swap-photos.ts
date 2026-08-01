@@ -21,6 +21,45 @@ export interface SwapResult {
   count: number;
   elapsedMs: number;
   cachedCount: number;
+  soundPath: string | null;
+  soundName: string | null;
+  soundAuthor: string | null;
+}
+
+const BROWSER_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+/**
+ * Best-effort download of the post's sound. playUrl is a signed, expiring
+ * TikTok CDN link, so this must run right after the scrape.
+ */
+async function downloadSound(
+  item: TikTokItem,
+  dir: Awaited<ReturnType<typeof runDir>>,
+): Promise<string | null> {
+  const playUrl = (item.musicMeta as { playUrl?: string } | undefined)?.playUrl;
+  if (!playUrl) {
+    return null;
+  }
+  const outName = "sound.mp3";
+  if (await dir.exists(outName)) {
+    return dir.file(outName);
+  }
+  try {
+    const response = await fetch(playUrl, {
+      headers: { "user-agent": BROWSER_UA },
+    });
+    if (!response.ok) {
+      info(`sound download skipped — HTTP ${response.status}`);
+      return null;
+    }
+    await dir.writeBytes(outName, new Uint8Array(await response.arrayBuffer()));
+    ok(`sound.mp3 (${(item.musicMeta?.musicName as string) ?? "unknown"})`);
+    return dir.file(outName);
+  } catch (error) {
+    info(`sound download skipped — ${error instanceof Error ? error.message : error}`);
+    return null;
+  }
 }
 
 /**
@@ -86,6 +125,16 @@ export async function swapPhotos(
     paths.push(dir.file(outName));
   }
 
+  const soundPath = await downloadSound(item, dir);
+
   detail(`swapped images in ${dir.display("")}`);
-  return { paths, count: paths.length, elapsedMs: elapsed(), cachedCount };
+  return {
+    paths,
+    count: paths.length,
+    elapsedMs: elapsed(),
+    cachedCount,
+    soundPath,
+    soundName: item.musicMeta?.musicName ?? null,
+    soundAuthor: item.musicMeta?.musicAuthor ?? null,
+  };
 }

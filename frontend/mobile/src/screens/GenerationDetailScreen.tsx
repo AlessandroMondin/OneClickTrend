@@ -19,6 +19,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import {
   generationPhotoUrl,
+  generationSoundUrl,
   generationVideoUrl,
   getGeneration,
 } from "../api/client";
@@ -193,6 +194,36 @@ function GenerationDetailScreen({ route }: Props) {
       {generation.status === "completed" &&
       generation.outputKind === "photos" ? (
         <View style={styles.section}>
+          {generation.soundName && (
+            <View style={styles.soundRow}>
+              <Text style={styles.sectionLabel}>Sound</Text>
+              <Text style={styles.soundName}>
+                {generation.soundName} — {generation.soundAuthor ?? "?"}
+              </Text>
+              {generation.soundS3Key && (
+                <Pressable
+                  style={styles.soundButton}
+                  onPress={async () => {
+                    try {
+                      const path = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/sound-${generation.id}.mp3`;
+                      await ReactNativeBlobUtil.config({ path }).fetch(
+                        "GET",
+                        generationSoundUrl(generation.id),
+                      );
+                      await Share.share({ url: `file://${path}` });
+                    } catch (e) {
+                      Alert.alert(
+                        "Share failed",
+                        e instanceof Error ? e.message : String(e),
+                      );
+                    }
+                  }}
+                >
+                  <Text style={styles.actionText}>Share Sound</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
           <Text style={styles.sectionLabel}>Generated Photos:</Text>
           {(generation.outputS3Keys ?? []).map((_, index) => (
             <GeneratedPhoto key={index} id={id} index={index} />
@@ -309,6 +340,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.25)",
   },
   playIcon: { color: "#fff", fontSize: 48 },
+  soundRow: { gap: 6, marginBottom: 8 },
+  soundName: { fontSize: 15, fontWeight: "500" },
+  soundButton: {
+    backgroundColor: "#e5e5ea",
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
   photoWrap: { gap: 8, marginBottom: 8 },
   photo: {
     width: "100%",

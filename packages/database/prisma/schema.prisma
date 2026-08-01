@@ -53,6 +53,9 @@ model Generation {
   outputKind   String      @default("video")
   outputS3Key  String?
   outputS3Keys Json?
+  soundS3Key   String?
+  soundName    String?
+  soundAuthor  String?
   error        String?
   createdAt    DateTime    @default(now())
 }

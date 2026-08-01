@@ -65,12 +65,27 @@ export async function runAnimationJob(
         );
         keys.push(key);
       }
+      let soundS3Key: string | null = null;
+      if (report.soundOutput) {
+        soundS3Key = `renders/${generationId}/sound.mp3`;
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: BUCKET,
+            Key: soundS3Key,
+            Body: await fs.promises.readFile(report.soundOutput.path),
+            ContentType: "audio/mpeg",
+          }),
+        );
+      }
       await prisma.generation.update({
         where: { id: generationId },
         data: {
           status: "completed",
           outputKind: "photos",
           outputS3Keys: keys,
+          soundS3Key,
+          soundName: report.soundOutput?.name ?? null,
+          soundAuthor: report.soundOutput?.author ?? null,
         },
       });
       apiLog(`animate ${generationId} completed -> ${keys.length} photo(s)`);

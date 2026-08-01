@@ -443,6 +443,7 @@ app.delete("/generations/:id", wrap(async (req, res) => {
   await prisma.generation.delete({ where: { id: generation.id } });
   const keys = [
     ...(generation.outputS3Key ? [generation.outputS3Key] : []),
+    ...(generation.soundS3Key ? [generation.soundS3Key] : []),
     ...(((generation.outputS3Keys as string[] | null) ?? [])),
   ];
   for (const key of keys) {
@@ -467,6 +468,24 @@ app.get("/generations/:id/photo/:index", wrap(async (req, res) => {
   }
   const obj = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
   res.setHeader("Content-Type", "image/png");
+  if (obj.ContentLength != null) {
+    res.setHeader("Content-Length", obj.ContentLength);
+  }
+  (obj.Body as Readable).pipe(res);
+}));
+
+app.get("/generations/:id/sound", wrap(async (req, res) => {
+  const generation = await prisma.generation.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!generation?.soundS3Key) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  const obj = await s3.send(
+    new GetObjectCommand({ Bucket: BUCKET, Key: generation.soundS3Key }),
+  );
+  res.setHeader("Content-Type", "audio/mpeg");
   if (obj.ContentLength != null) {
     res.setHeader("Content-Length", obj.ContentLength);
   }

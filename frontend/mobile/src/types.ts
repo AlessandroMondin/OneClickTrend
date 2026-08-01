@@ -29,6 +29,9 @@ export interface Generation {
   outputKind?: string;
   outputS3Key?: string | null;
   outputS3Keys?: string[] | null;
+  soundS3Key?: string | null;
+  soundName?: string | null;
+  soundAuthor?: string | null;
   error?: string | null;
   createdAt: string;
   sharedLink?: {
