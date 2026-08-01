@@ -7,6 +7,8 @@ export PATH := $(NODE_DIR):$(PATH)
 
 MOBILE := frontend/mobile
 CONFIG := $(MOBILE)/src/config.ts
+BUNDLE_ID := org.reactjs.native.example.OneClickTrend
+DEVICE_ID := $(shell xcrun devicectl list devices 2>/dev/null | grep -oE '[0-9A-F]{8}-[0-9A-F-]{27}' | head -1)
 
 .PHONY: install backend configure-api iphone iphone-debug simulator metro clean
 
@@ -24,11 +26,30 @@ configure-api:
 	@IP=$$(ipconfig getifaddr en0); \
 	if [ -z "$$IP" ]; then echo "No LAN IP found on en0 — is Wi-Fi on?"; exit 1; fi; \
 	sed -i '' "s|http://[^\"]*|http://$$IP:3000|" $(CONFIG); \
-	echo "API_URL -> http://$$IP:3000"
+	sed -i '' "s|^S3_PUBLIC_ENDPOINT=.*|S3_PUBLIC_ENDPOINT=http://$$IP:4566|" backend/api/.env; \
+	echo "API_URL -> http://$$IP:3000  S3_PUBLIC_ENDPOINT -> http://$$IP:4566"
+
+## db-up: start postgres + localstack (waits until healthy, bucket ready)
+db-up:
+	cd backend/api && docker compose up -d --wait
+
+## db-down: stop postgres + localstack
+db-down:
+	cd backend/api && docker compose down
+
+## migrate: run prisma migrations against the local db
+migrate: db-up
+	cd packages/database && npx prisma migrate dev
 
 ## iphone: build a Release app and install it on the connected iPhone (no Metro needed)
 iphone: configure-api
-	cd $(MOBILE) && npx react-native run-ios --device --mode Release
+	@if [ -z "$(DEVICE_ID)" ]; then echo "No iPhone found — plug it in and unlock it"; exit 1; fi
+	cd $(MOBILE)/ios && xcodebuild -workspace OneClickTrend.xcworkspace -scheme OneClickTrend \
+		-configuration Release -destination 'generic/platform=iOS' \
+		-derivedDataPath build/DerivedData -allowProvisioningUpdates build
+	xcrun devicectl device install app --device $(DEVICE_ID) \
+		$(MOBILE)/ios/build/DerivedData/Build/Products/Release-iphoneos/OneClickTrend.app
+	xcrun devicectl device process launch --device $(DEVICE_ID) $(BUNDLE_ID)
 
 ## iphone-debug: Debug build on the iPhone (needs Metro: run `make metro` in another terminal)
 iphone-debug: configure-api

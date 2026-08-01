@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MediaKind {
+  PHOTO
+  VIDEO
+}
+
+model Character {
+  id          String       @id @default(uuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  media       MediaAsset[]
+  generations Generation[]
+}
+
+model MediaAsset {
+  id          String    @id @default(uuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  kind        MediaKind
+  s3Key       String
+  mimeType    String
+  position    Int       @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+model Generation {
+  id          String     @id @default(uuid())
+  characterId String?
+  character   Character? @relation(fields: [characterId], references: [id])
+  status      String     @default("pending")
+  createdAt   DateTime   @default(now())
+}

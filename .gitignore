@@ -5,6 +5,9 @@ dist/
 .env.*
 !.env.example
 *.log
+backend/api/localstack-data/
+logs/
+packages/database/generated/
 
 # API validation scripts: run artifacts and the personal face photo
 scripts/out/

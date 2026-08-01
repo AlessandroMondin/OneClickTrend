@@ -1,0 +1,21 @@
+{
+  "name": "@oneclicktrend/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "prisma generate && tsc",
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist generated .turbo"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.16.0",
+    "typescript": "^5.6.0"
+  }
+}
