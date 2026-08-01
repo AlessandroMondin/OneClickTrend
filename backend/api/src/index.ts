@@ -2,7 +2,11 @@ import "dotenv/config";
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createPrismaClient, MediaKind } from "@oneclicktrend/database";
 import express from "express";
@@ -188,6 +192,48 @@ app.get("/media/:id", wrap(async (req, res) => {
     res.setHeader("Content-Range", obj.ContentRange);
   }
   (obj.Body as Readable).pipe(res);
+}));
+
+app.delete("/characters/:id", wrap(async (req, res) => {
+  const character = await prisma.character.findUnique({
+    where: { id: req.params.id },
+    include: { media: true },
+  });
+  if (!character) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  await prisma.character.delete({ where: { id: character.id } });
+  for (const asset of character.media) {
+    try {
+      await s3.send(
+        new DeleteObjectCommand({ Bucket: BUCKET, Key: asset.s3Key }),
+      );
+    } catch (err) {
+      apiLog(`WARN could not delete s3 object ${asset.s3Key}: ${err}`);
+    }
+  }
+  res.status(204).end();
+}));
+
+app.delete("/media/:id", wrap(async (req, res) => {
+  const asset = await prisma.mediaAsset.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!asset) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  await prisma.mediaAsset.delete({ where: { id: asset.id } });
+  try {
+    await s3.send(
+      new DeleteObjectCommand({ Bucket: BUCKET, Key: asset.s3Key }),
+    );
+  } catch (err) {
+    // Row is gone; a leftover S3 object is harmless for local dev.
+    apiLog(`WARN could not delete s3 object ${asset.s3Key}: ${err}`);
+  }
+  res.status(204).end();
 }));
 
 app.get("/generations", wrap(async (_req, res) => {

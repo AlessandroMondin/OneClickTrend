@@ -60,6 +60,20 @@ export async function uploadToPresignedUrl(
   }
 }
 
+export async function deleteCharacter(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/characters/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    throw new Error(`Delete failed: ${res.status}`);
+  }
+}
+
+export async function deleteMedia(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/media/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    throw new Error(`Delete failed: ${res.status}`);
+  }
+}
+
 export function listGenerations(): Promise<Generation[]> {
   return fetch(`${API_URL}/generations`).then((r) => json<Generation[]>(r));
 }
