@@ -30,6 +30,12 @@ export const env = {
   get viggleApiKey(): string {
     return required("VIGGLE_API_KEY");
   },
+  /** Pipeline v2 (Runway). The SDK's own conventional variable name. */
+  get runwayApiKey(): string {
+    return required("RUNWAYML_API_SECRET");
+  },
+  /** Nano Banana, called directly at Google — unrelated to the Gemini model
+   * pipeline v2 reaches through Runway, which uses RUNWAYML_API_SECRET. */
   get geminiApiKey(): string {
     return required("GEMINI_API_KEY");
   },
@@ -38,4 +44,8 @@ export const env = {
   /** clockworks/tiktok-scraper */
   actorId: process.env.APIFY_ACTOR_ID?.trim() || "GdWCkxBtKWOsKjdch",
   viggleBaseUrl: (process.env.VIGGLE_BASE_URL?.trim() || "https://apis.viggle.ai").replace(/\/$/, ""),
+  runwayBaseUrl: (process.env.RUNWAYML_BASE_URL?.trim() || "https://api.dev.runwayml.com").replace(
+    /\/$/,
+    "",
+  ),
 };

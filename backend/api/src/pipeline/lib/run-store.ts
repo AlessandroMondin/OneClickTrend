@@ -67,4 +67,20 @@ export const FILES = {
   render: "render.json",
   renderVideo: "render.mp4",
   report: "report.json",
+  // Pipeline v2 (Runway) writes alongside v1 so both can be compared per post.
+  motionVideo: "motion.mp4",
+  reportV2: "report-v2.json",
+  compareV2: "compare-v2.json",
 } as const;
+
+/**
+ * v2 artifacts are per model, so one post can hold a Seedance render next to an
+ * act_two one and the cache never confuses the two.
+ */
+export function renderV2Video(model: string): string {
+  return `render-v2-${model}.mp4`;
+}
+
+export function renderV2Json(model: string): string {
+  return `render-v2-${model}.json`;
+}

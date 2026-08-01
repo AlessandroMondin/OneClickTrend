@@ -12,6 +12,10 @@
     "character": "tsx src/pipeline/cli.ts character",
     "render": "tsx src/pipeline/cli.ts render",
     "pipeline": "tsx src/pipeline/cli.ts pipeline",
+    "check-v2": "tsx src/pipeline/cli.ts check-v2",
+    "render-v2": "tsx src/pipeline/cli.ts render-v2",
+    "pipeline-v2": "tsx src/pipeline/cli.ts pipeline-v2",
+    "compare-v2": "tsx src/pipeline/cli.ts compare-v2",
     "smoke": "tsx src/pipeline/cli.ts smoke",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
@@ -20,6 +24,7 @@
     "@aws-sdk/client-s3": "^3.850.0",
     "@aws-sdk/s3-request-presigner": "^3.850.0",
     "@oneclicktrend/database": "workspace:*",
+    "@runwayml/sdk": "^4.13.1",
     "apify-client": "^2.12.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.0"

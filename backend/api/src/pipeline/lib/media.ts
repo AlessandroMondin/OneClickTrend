@@ -9,12 +9,12 @@ const IMAGE_TYPES: Record<string, string> = {
 
 export const IMAGE_EXTENSIONS = Object.keys(IMAGE_TYPES);
 
-/** Viggle only accepts PNG, JPEG and WebP for a Character image. */
+/** Both Viggle (Character image) and Runway (image reference) take PNG, JPEG and WebP only. */
 export function imageMimeType(path: string): string {
   const type = IMAGE_TYPES[extname(path).toLowerCase()];
   if (!type) {
     throw new Error(
-      `Unsupported image type: ${path}. Viggle accepts ${IMAGE_EXTENSIONS.join(", ")}.`,
+      `Unsupported image type: ${path}. Only ${IMAGE_EXTENSIONS.join(", ")} are accepted.`,
     );
   }
   return type;
