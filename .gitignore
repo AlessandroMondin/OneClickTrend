@@ -2,7 +2,15 @@ node_modules/
 dist/
 .turbo/
 .env
+.env.*
+!.env.example
 *.log
+
+# API validation scripts: run artifacts and the personal face photo
+scripts/out/
+scripts/assets/face/*
+!scripts/assets/face/.gitkeep
+!scripts/assets/face/README.md
 
 # iOS
 frontend/mobile/ios/Pods/
