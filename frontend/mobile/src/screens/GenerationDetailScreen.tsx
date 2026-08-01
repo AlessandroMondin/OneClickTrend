@@ -118,11 +118,9 @@ function GenerationDetailScreen({ route }: Props) {
             <Video
               ref={videoRef}
               source={{ uri: generationVideoUrl(id) }}
-              style={styles.videoPlaceholder}
+              style={styles.video}
               controls
               resizeMode="contain"
-              onLoad={() => videoRef.current?.presentFullscreenPlayer()}
-              onFullscreenPlayerWillDismiss={() => setPlaying(false)}
               onEnd={() => setPlaying(false)}
               onError={(e) => {
                 console.error("video playback error:", JSON.stringify(e));
@@ -199,6 +197,12 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 13, fontWeight: "600", color: "#666" },
   sourceLink: { fontSize: 16, fontWeight: "500" },
   sourceUrl: { fontSize: 12, color: "#4a90d9", marginTop: 2 },
+  video: {
+    width: "100%",
+    aspectRatio: 9 / 16,
+    borderRadius: 12,
+    backgroundColor: "#000",
+  },
   videoPlaceholder: {
     width: "100%",
     aspectRatio: 9 / 16,
