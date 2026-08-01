@@ -1,6 +1,6 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { OUT_DIR, SCRIPTS_ROOT } from "./env";
+import { API_ROOT, OUT_DIR } from "./env";
 
 /**
  * Every artifact for one TikTok post lives in `out/<postId>/`, which is what makes
@@ -17,9 +17,9 @@ export class RunDir {
     return join(this.path, name);
   }
 
-  /** Path relative to scripts/, for readable log lines. */
+  /** Path relative to backend/api, for readable log lines. */
   display(name: string): string {
-    return relative(SCRIPTS_ROOT, this.file(name));
+    return relative(API_ROOT, this.file(name));
   }
 
   async exists(name: string): Promise<boolean> {

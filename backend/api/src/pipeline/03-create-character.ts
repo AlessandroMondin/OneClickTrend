@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
-import { flagValue, hasFlag, parseArgs, runCli } from "./lib/cli";
 import { FACE_DIR } from "./lib/env";
 import { detail, formatMs, info, ok, step, timer, warn } from "./lib/log";
 import { IMAGE_EXTENSIONS, imageMimeType } from "./lib/media";
@@ -136,11 +135,3 @@ async function readCache(): Promise<Cache> {
 async function writeCache(cache: Cache): Promise<void> {
   await writeFile(CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
 }
-
-await runCli(import.meta.url, async () => {
-  const args = parseArgs();
-  await ensureCharacter({
-    imagePath: flagValue(args, "image") ?? args.positional[0],
-    force: hasFlag(args, "force"),
-  });
-});

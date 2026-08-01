@@ -1,5 +1,4 @@
 import type { TikTokItem } from "./lib/apify";
-import { hasFlag, parseArgs, runCli } from "./lib/cli";
 import { env } from "./lib/env";
 import { detail, formatBytes, formatMs, info, ok, step, timer, warn } from "./lib/log";
 import { hasAudioTrack } from "./lib/media";
@@ -125,12 +124,3 @@ function noteRetention(sourceUrl: string, dir: RunDir): void {
       `own storage right away — which is what ${dir.display(FILES.sourceVideo)} is doing here.`,
   );
 }
-
-await runCli(import.meta.url, async () => {
-  const args = parseArgs();
-  const postId = args.positional[0];
-  if (!postId) {
-    throw new Error("Usage: pnpm download <postId> [--force]");
-  }
-  await downloadVideo(postId, { force: hasFlag(args, "force") });
-});

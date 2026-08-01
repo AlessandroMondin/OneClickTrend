@@ -3,7 +3,6 @@ import { fetchTikTok } from "./01-fetch-tiktok";
 import { downloadVideo } from "./02-download-video";
 import { ensureCharacter } from "./03-create-character";
 import { renderWithFace, type RenderOptions } from "./04-render";
-import { flagValue, hasFlag, parseArgs, runCli } from "./lib/cli";
 import { errorMessage, formatBytes, formatMs, info, ok, step, timer } from "./lib/log";
 import { FILES, type RunDir } from "./lib/run-store";
 
@@ -206,18 +205,3 @@ function printSummary(report: Report, dir: RunDir | null): void {
     info(`report: ${dir.display(FILES.report)}`);
   }
 }
-
-await runCli(import.meta.url, async () => {
-  const args = parseArgs();
-  const url = args.positional[0];
-  if (!url) {
-    throw new Error(
-      'Usage: pnpm pipeline "<tiktok url>" [--image path] [--background original|solid|transparent] [--force]',
-    );
-  }
-  await runPipeline(url, {
-    imagePath: flagValue(args, "image"),
-    backgroundMode: flagValue(args, "background") as RenderOptions["backgroundMode"],
-    force: hasFlag(args, "force"),
-  });
-});

@@ -9,11 +9,9 @@ backend/api/localstack-data/
 logs/
 packages/database/generated/
 
-# API validation scripts: run artifacts and the personal face photo
-scripts/out/
-scripts/assets/face/*
-!scripts/assets/face/.gitkeep
-!scripts/assets/face/README.md
+# Render pipeline: per-post artifacts and the Viggle character cache
+backend/api/out/
+backend/api/data/
 
 # iOS
 frontend/mobile/ios/Pods/

@@ -51,17 +51,17 @@ streaming `GET /media/:id` endpoint (Range supported for video).
 ## Animation pipeline
 
 Tapping **Animate** on a shared link asks for a character, then the API runs
-the TikTok → Viggle workflow from `scripts/`
-(`pnpm --filter @oneclicktrend/scripts pipeline "<url>" --image <character photo>`),
-uploads the rendered video to S3 and marks the Generation `completed` — it then
+the built-in TikTok → Viggle pipeline (`backend/api/src/pipeline/`)
+running in-process with the character's main photo as the face image. It
+uploads the rendered video to S3 and marks the Generation `completed`, which then
 plays inline in My Generations. Requires real API keys:
 
 ```bash
-cp scripts/.env.example scripts/.env   # fill APIFY_TOKEN and VIGGLE_API_KEY
+# fill APIFY_TOKEN and VIGGLE_API_KEY in backend/api/.env
 ```
 
 Without keys the pipeline fails fast and the Generation shows `failed` with the
-reason. Per-job logs: `logs/animate-<generationId>.log`.
+reason (also logged to `logs/api.log`). Artifacts cache under `backend/api/out/`.
 
 ## Other targets
 

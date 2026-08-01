@@ -1,5 +1,4 @@
 import { scrapePost, type RunSummary, type TikTokItem } from "./lib/apify";
-import { hasFlag, parseArgs, runCli } from "./lib/cli";
 import { detail, formatMs, info, ok, step, warn } from "./lib/log";
 import { FILES, runDir, type RunDir } from "./lib/run-store";
 import { resolveTikTokUrl, type ResolvedPost } from "./lib/tiktok-url";
@@ -113,12 +112,3 @@ function describeItem(item: TikTokItem): void {
     warn("No duration in videoMeta — cannot estimate the render cost up front.");
   }
 }
-
-await runCli(import.meta.url, async () => {
-  const args = parseArgs();
-  const url = args.positional[0];
-  if (!url) {
-    throw new Error('Usage: pnpm fetch "<tiktok url>" [--force]');
-  }
-  await fetchTikTok(url, { force: hasFlag(args, "force") });
-});

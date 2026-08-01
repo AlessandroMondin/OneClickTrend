@@ -1,5 +1,4 @@
 import { whoAmI } from "./lib/apify";
-import { runCli } from "./lib/cli";
 import { env } from "./lib/env";
 import { info, ok, step, warn } from "./lib/log";
 import { getCredits } from "./lib/viggle";
@@ -29,7 +28,3 @@ export async function checkKeys(): Promise<KeyCheck> {
 
   return { apifyUser, viggleBalance: balance };
 }
-
-await runCli(import.meta.url, async () => {
-  await checkKeys();
-});

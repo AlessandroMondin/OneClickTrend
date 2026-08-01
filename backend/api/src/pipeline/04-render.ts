@@ -1,5 +1,4 @@
 import { ensureCharacter } from "./03-create-character";
-import { flagValue, hasFlag, parseArgs, runCli } from "./lib/cli";
 import { detail, formatBytes, formatMs, info, ok, step, timer, warn } from "./lib/log";
 import { hasAudioTrack } from "./lib/media";
 import { FILES, runDir } from "./lib/run-store";
@@ -145,19 +144,3 @@ async function readBalance(): Promise<number | null> {
     return null;
   }
 }
-
-await runCli(import.meta.url, async () => {
-  const args = parseArgs();
-  const postId = args.positional[0];
-  if (!postId) {
-    throw new Error(
-      "Usage: pnpm render <postId> [--character char_xxx] [--image path] [--background original|solid|transparent] [--force]",
-    );
-  }
-  await renderWithFace(postId, {
-    characterId: flagValue(args, "character"),
-    imagePath: flagValue(args, "image"),
-    backgroundMode: flagValue(args, "background") as RenderOptions["backgroundMode"],
-    force: hasFlag(args, "force"),
-  });
-});
