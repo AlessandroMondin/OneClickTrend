@@ -6,6 +6,13 @@
     "build": "tsc",
     "dev": "docker compose up -d --wait && tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "check": "tsx src/pipeline/cli.ts check",
+    "fetch": "tsx src/pipeline/cli.ts fetch",
+    "download": "tsx src/pipeline/cli.ts download",
+    "character": "tsx src/pipeline/cli.ts character",
+    "render": "tsx src/pipeline/cli.ts render",
+    "pipeline": "tsx src/pipeline/cli.ts pipeline",
+    "smoke": "tsx src/pipeline/cli.ts smoke",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
   },
