@@ -27,6 +27,7 @@ export interface Generation {
   characterId: string | null;
   status: string;
   createdAt: string;
+  sharedLink?: { url: string; source: string } | null;
 }
 
 export interface UploadTarget {

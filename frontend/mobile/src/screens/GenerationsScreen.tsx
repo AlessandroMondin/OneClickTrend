@@ -29,7 +29,14 @@ function GenerationsScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Text style={styles.status}>{item.status}</Text>
+            <View style={styles.rowMain}>
+              <Text style={styles.status}>{item.status}</Text>
+              {item.sharedLink && (
+                <Text style={styles.source} numberOfLines={1}>
+                  {item.sharedLink.source}: {item.sharedLink.url}
+                </Text>
+              )}
+            </View>
             <Text style={styles.date}>
               {new Date(item.createdAt).toLocaleString()}
             </Text>
@@ -53,8 +60,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  rowMain: { flex: 1, marginRight: 8 },
   status: { fontSize: 16, fontWeight: "600" },
-  date: { fontSize: 14, color: "#666" },
+  source: { fontSize: 12, color: "#666", marginTop: 2 },
+  date: { fontSize: 12, color: "#666" },
   empty: { textAlign: "center", color: "#999", marginTop: 48, fontSize: 16 },
   error: { color: "#c00", textAlign: "center", padding: 8 },
 });

@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
-import { Alert, AppState, Linking } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { AppState, Linking } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 
-import { consumeSharedLink, pendingSharedLinks } from "./src/api/client";
+import { listSharedLinks } from "./src/api/client";
+import { SharedLinksContext } from "./src/context";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -14,6 +15,7 @@ import AddCharacterScreen from "./src/screens/AddCharacterScreen";
 import CharacterDetailScreen from "./src/screens/CharacterDetailScreen";
 import CharactersListScreen from "./src/screens/CharactersListScreen";
 import GenerationsScreen from "./src/screens/GenerationsScreen";
+import SharedLinksScreen from "./src/screens/SharedLinksScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<CharactersStackParamList>();
@@ -44,39 +46,27 @@ function handleSharedUrl(deepLink: string | null) {
   if (deepLink) {
     console.log("deep link received:", deepLink);
   }
-  if (!deepLink?.startsWith("oneclicktrend://shared")) {
-    return;
-  }
-  const encoded = deepLink.split("url=")[1] ?? "";
-  const shared = decodeURIComponent(encoded);
-  console.log("received shared link:", shared);
-  Alert.alert("Shared link received", shared);
-}
-
-async function checkPendingSharedLinks() {
-  try {
-    const links = await pendingSharedLinks();
-    for (const link of links) {
-      console.log("pending shared link:", link.url);
-      Alert.alert("Shared link received", link.url);
-      await consumeSharedLink(link.id);
-    }
-  } catch (e) {
-    console.warn("pending shared links check failed:", String(e));
-  }
 }
 
 function App(): React.JSX.Element {
+  const [unseenCount, setUnseenCount] = useState(0);
+
+  const refreshUnseen = useCallback(() => {
+    listSharedLinks()
+      .then((links) => setUnseenCount(links.filter((l) => !l.seen).length))
+      .catch((e) => console.warn("unseen check failed:", String(e)));
+  }, []);
+
   useEffect(() => {
     Linking.getInitialURL().then(handleSharedUrl);
     const linkSub = Linking.addEventListener("url", ({ url }) =>
       handleSharedUrl(url),
     );
 
-    checkPendingSharedLinks();
+    refreshUnseen();
     const stateSub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
-        checkPendingSharedLinks();
+        refreshUnseen();
       }
     });
 
@@ -84,23 +74,33 @@ function App(): React.JSX.Element {
       linkSub.remove();
       stateSub.remove();
     };
-  }, []);
+  }, [refreshUnseen]);
 
   return (
-    <NavigationContainer>
-      <Tab.Navigator>
-        <Tab.Screen
-          name="Characters"
-          component={CharactersStack}
-          options={{ headerShown: false }}
-        />
-        <Tab.Screen
-          name="Generations"
-          component={GenerationsScreen}
-          options={{ title: "My Generations" }}
-        />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <SharedLinksContext.Provider value={{ refreshUnseen }}>
+      <NavigationContainer>
+        <Tab.Navigator>
+          <Tab.Screen
+            name="Characters"
+            component={CharactersStack}
+            options={{ headerShown: false }}
+          />
+          <Tab.Screen
+            name="SharedLinks"
+            component={SharedLinksScreen}
+            options={{
+              title: "Shared Links",
+              tabBarBadge: unseenCount > 0 ? unseenCount : undefined,
+            }}
+          />
+          <Tab.Screen
+            name="Generations"
+            component={GenerationsScreen}
+            options={{ title: "My Generations" }}
+          />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </SharedLinksContext.Provider>
   );
 }
 

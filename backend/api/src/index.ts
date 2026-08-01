@@ -258,36 +258,68 @@ app.delete("/media/:id", wrap(async (req, res) => {
   res.status(204).end();
 }));
 
-// The share extension posts shared URLs here; the app polls for pending ones.
+function sourceFromUrl(url: string): string {
+  try {
+    const host = new URL(url).hostname;
+    if (host.includes("tiktok")) {
+      return "tiktok";
+    }
+    if (host.includes("instagram")) {
+      return "instagram";
+    }
+  } catch {
+    // fall through
+  }
+  return "other";
+}
+
+// The share extension posts shared URLs here; the app shows them in the
+// Shared Links tab with an unread badge.
 app.post("/shared-links", wrap(async (req, res) => {
   const url = String(req.body?.url ?? "").trim();
   if (!url) {
     res.status(400).json({ error: "url required" });
     return;
   }
-  const link = await prisma.sharedLink.create({ data: { url } });
+  const link = await prisma.sharedLink.create({
+    data: { url, source: sourceFromUrl(url) },
+  });
   res.status(201).json(link);
 }));
 
-app.get("/shared-links/pending", wrap(async (_req, res) => {
+app.get("/shared-links", wrap(async (_req, res) => {
   const links = await prisma.sharedLink.findMany({
-    where: { consumed: false },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
   res.json(links);
 }));
 
-app.post("/shared-links/:id/consume", wrap(async (req, res) => {
-  await prisma.sharedLink.update({
-    where: { id: req.params.id },
-    data: { consumed: true },
+app.post("/shared-links/seen", wrap(async (_req, res) => {
+  await prisma.sharedLink.updateMany({
+    where: { seen: false },
+    data: { seen: true },
   });
   res.status(204).end();
+}));
+
+app.post("/shared-links/:id/animate", wrap(async (req, res) => {
+  const link = await prisma.sharedLink.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!link) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  const generation = await prisma.generation.create({
+    data: { sharedLinkId: link.id, status: "pending" },
+  });
+  res.status(201).json(generation);
 }));
 
 app.get("/generations", wrap(async (_req, res) => {
   const generations = await prisma.generation.findMany({
     orderBy: { createdAt: "desc" },
+    include: { sharedLink: { select: { url: true, source: true } } },
   });
   res.json(generations);
 }));

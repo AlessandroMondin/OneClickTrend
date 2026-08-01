@@ -33,16 +33,20 @@ model MediaAsset {
 }
 
 model SharedLink {
-  id        String   @id @default(uuid())
-  url       String
-  consumed  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id          String       @id @default(uuid())
+  url         String
+  source      String       @default("other")
+  seen        Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  generations Generation[]
 }
 
 model Generation {
-  id          String     @id @default(uuid())
-  characterId String?
-  character   Character? @relation(fields: [characterId], references: [id])
-  status      String     @default("pending")
-  createdAt   DateTime   @default(now())
+  id           String      @id @default(uuid())
+  characterId  String?
+  character    Character?  @relation(fields: [characterId], references: [id])
+  sharedLinkId String?
+  sharedLink   SharedLink? @relation(fields: [sharedLinkId], references: [id])
+  status       String      @default("pending")
+  createdAt    DateTime    @default(now())
 }
