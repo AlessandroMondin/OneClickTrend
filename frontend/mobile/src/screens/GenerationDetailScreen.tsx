@@ -17,6 +17,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { generationVideoUrl, getGeneration } from "../api/client";
+import VideoThumbnail from "../components/VideoThumbnail";
 import type { GenerationsStackParamList } from "../navigation";
 import type { Generation } from "../types";
 
@@ -112,21 +113,30 @@ function GenerationDetailScreen({ route }: Props) {
       {generation.status === "completed" ? (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Play Generated Content:</Text>
-          {playing ? (
+          <Pressable
+            style={styles.videoPlaceholder}
+            onPress={() => setPlaying(true)}
+          >
+            <VideoThumbnail
+              uri={generationVideoUrl(id)}
+              style={styles.videoThumb}
+            />
+            <View style={styles.playOverlay}>
+              <Text style={styles.playIcon}>▶</Text>
+            </View>
+          </Pressable>
+          {playing && (
+            // Rendered offscreen; the fullscreen prop presents the native
+            // player immediately. Dismissing unmounts it.
             <Video
               source={{ uri: generationVideoUrl(id) }}
-              style={styles.video}
+              style={styles.hiddenVideo}
+              fullscreen
               controls
               resizeMode="contain"
+              onFullscreenPlayerWillDismiss={() => setPlaying(false)}
+              onEnd={() => setPlaying(false)}
             />
-          ) : (
-            <Pressable
-              style={styles.videoPlaceholder}
-              onPress={() => setPlaying(true)}
-            >
-              <Text style={styles.playIcon}>▶</Text>
-              <Text style={styles.playLabel}>Tap to play</Text>
-            </Pressable>
           )}
           <View style={styles.actions}>
             <Pressable
@@ -184,23 +194,22 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 13, fontWeight: "600", color: "#666" },
   sourceLink: { fontSize: 16, fontWeight: "500" },
   sourceUrl: { fontSize: 12, color: "#4a90d9", marginTop: 2 },
-  video: {
-    width: "100%",
-    aspectRatio: 9 / 16,
-    borderRadius: 12,
-    backgroundColor: "#000",
-  },
   videoPlaceholder: {
     width: "100%",
     aspectRatio: 9 / 16,
     borderRadius: 12,
     backgroundColor: "#111",
+    overflow: "hidden",
+  },
+  videoThumb: { width: "100%", height: "100%" },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    backgroundColor: "rgba(0,0,0,0.25)",
   },
-  playIcon: { color: "#fff", fontSize: 42 },
-  playLabel: { color: "#aaa", fontSize: 14 },
+  playIcon: { color: "#fff", fontSize: 48 },
+  hiddenVideo: { width: 1, height: 1, opacity: 0 },
   actions: { flexDirection: "row", gap: 12 },
   actionButton: {
     flex: 1,

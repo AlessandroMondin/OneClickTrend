@@ -12,7 +12,12 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { deleteGeneration, listGenerations } from "../api/client";
+import {
+  deleteGeneration,
+  generationVideoUrl,
+  listGenerations,
+} from "../api/client";
+import VideoThumbnail from "../components/VideoThumbnail";
 import type { GenerationsStackParamList } from "../navigation";
 import type { Generation } from "../types";
 
@@ -88,6 +93,12 @@ function GenerationsScreen({ navigation }: Props) {
                 <Text style={styles.thumbnailGlyph}>♪</Text>
               </View>
             )}
+            {item.status === "completed" && (
+              <VideoThumbnail
+                uri={generationVideoUrl(item.id)}
+                style={styles.thumbnail}
+              />
+            )}
             <View style={styles.info}>
               <View style={styles.statusRow}>
                 {item.status === "running" && (
@@ -140,6 +151,7 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 8,
     backgroundColor: "#ddd",
+    overflow: "hidden",
   },
   thumbnailPlaceholder: {
     backgroundColor: "#010101",
