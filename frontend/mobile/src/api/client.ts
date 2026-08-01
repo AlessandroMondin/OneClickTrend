@@ -106,6 +106,15 @@ export async function markSharedLinksSeen(): Promise<void> {
   await fetch(`${API_URL}/shared-links/seen`, { method: "POST" });
 }
 
+export async function deleteSharedLink(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/shared-links/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    throw new Error(`Delete failed: ${res.status}`);
+  }
+}
+
 export function animateSharedLink(id: string): Promise<Generation> {
   return fetch(`${API_URL}/shared-links/${id}/animate`, {
     method: "POST",

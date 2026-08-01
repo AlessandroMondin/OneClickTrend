@@ -296,7 +296,11 @@ async function fetchOembed(
   url: string,
 ): Promise<{ title?: string; thumbnailUrl?: string }> {
   try {
-    const resolved = await resolveShortLink(url);
+    // oEmbed rejects /photo/ post URLs but accepts the same id as /video/.
+    const resolved = (await resolveShortLink(url)).replace(
+      "/photo/",
+      "/video/",
+    );
     const res = await fetch(
       `https://www.tiktok.com/oembed?url=${encodeURIComponent(resolved)}`,
       { signal: AbortSignal.timeout(5000) },
@@ -358,6 +362,11 @@ app.post("/shared-links/seen", wrap(async (_req, res) => {
     where: { seen: false },
     data: { seen: true },
   });
+  res.status(204).end();
+}));
+
+app.delete("/shared-links/:id", wrap(async (req, res) => {
+  await prisma.sharedLink.delete({ where: { id: req.params.id } });
   res.status(204).end();
 }));
 

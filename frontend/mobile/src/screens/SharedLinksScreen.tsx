@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import {
   animateSharedLink,
+  deleteSharedLink,
   listSharedLinks,
   markSharedLinksSeen,
   SharedLink,
@@ -80,6 +81,28 @@ function SharedLinksScreen() {
     }
   };
 
+  const confirmDelete = (link: SharedLink) => {
+    Alert.alert("Delete shared link?", undefined, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteSharedLink(link.id);
+            setLinks((prev) => prev.filter((l) => l.id !== link.id));
+          } catch (e) {
+            console.error(
+              "delete link failed:",
+              e instanceof Error ? e.message : e,
+            );
+            Alert.alert("Failed", e instanceof Error ? e.message : String(e));
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       {error && <Text style={styles.error}>{error}</Text>}
@@ -101,12 +124,20 @@ function SharedLinksScreen() {
                 {new Date(item.createdAt).toLocaleString()}
               </Text>
             </Pressable>
-            <Pressable
-              style={styles.animateButton}
-              onPress={() => animate(item)}
-            >
-              <Text style={styles.animateText}>Animate</Text>
-            </Pressable>
+            <View style={styles.actions}>
+              <Pressable
+                style={styles.animateButton}
+                onPress={() => animate(item)}
+              >
+                <Text style={styles.animateText}>Animate</Text>
+              </Pressable>
+              <Pressable
+                style={styles.deleteButton}
+                onPress={() => confirmDelete(item)}
+              >
+                <Text style={styles.deleteText}>Delete</Text>
+              </Pressable>
+            </View>
           </View>
         )}
         ListEmptyComponent={
@@ -152,13 +183,22 @@ const styles = StyleSheet.create({
   linkInfo: { flex: 1 },
   url: { fontSize: 14, fontWeight: "500" },
   date: { fontSize: 12, color: "#666", marginTop: 2 },
+  actions: { gap: 6, alignItems: "stretch" },
   animateButton: {
     backgroundColor: "#111",
     borderRadius: 10,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    alignItems: "center",
   },
   animateText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  deleteButton: {
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    alignItems: "center",
+  },
+  deleteText: { color: "#c00", fontSize: 13, fontWeight: "500" },
   empty: {
     textAlign: "center",
     color: "#999",
