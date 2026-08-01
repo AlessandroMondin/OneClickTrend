@@ -161,6 +161,7 @@ function AddCharacterScreen({ navigation }: Props) {
       {photos.length > 0 && (
         <DraggableGrid<GridItem>
           numColumns={4}
+          delayLongPress={80}
           data={gridData}
           onDragRelease={(data) => setPhotos(data.map((d) => d.asset))}
           onItemPress={(item) => confirmRemovePhoto(item.key)}

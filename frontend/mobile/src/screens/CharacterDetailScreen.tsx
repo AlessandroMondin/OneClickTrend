@@ -228,6 +228,7 @@ function CharacterDetailScreen({ route, navigation }: Props) {
         )}
         <DraggableGrid<GridItem>
           numColumns={2}
+          delayLongPress={80}
           data={gridData}
           onDragRelease={onReorder}
           onItemPress={(item) => confirmRemove(item.media.id)}
