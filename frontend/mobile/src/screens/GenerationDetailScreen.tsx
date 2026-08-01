@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   Linking,
   Pressable,
@@ -9,6 +10,7 @@ import {
   Share,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { CameraRoll } from "@react-native-camera-roll/camera-roll";
@@ -50,15 +52,37 @@ async function downloadPhotoToCache(id: string, index: number): Promise<string> 
   return `file://${path}`;
 }
 
-function GeneratedPhoto({ id, index }: { id: string; index: number }) {
+// TikTok-style carousel: full-width swipeable pager with a page counter and
+// the post's sound looping while it is on screen.
+function PhotoCarousel({
+  id,
+  count,
+  hasSound,
+}: {
+  id: string;
+  count: number;
+  hasSound: boolean;
+}) {
+  const { width } = useWindowDimensions();
+  const pageWidth = width - 32;
+  const [page, setPage] = useState(0);
+  const [soundOn, setSoundOn] = useState(true);
   const [busy, setBusy] = useState<"download" | "share" | null>(null);
+
+  // Stop the sound when the screen loses focus.
+  useFocusEffect(
+    useCallback(() => {
+      setSoundOn(true);
+      return () => setSoundOn(false);
+    }, []),
+  );
 
   const download = async () => {
     setBusy("download");
     try {
-      const fileUrl = await downloadPhotoToCache(id, index);
+      const fileUrl = await downloadPhotoToCache(id, page);
       await CameraRoll.saveAsset(fileUrl, { type: "photo" });
-      Alert.alert("Saved", "Photo saved to your photo library.");
+      Alert.alert("Saved", `Photo ${page + 1} saved to your photo library.`);
     } catch (e) {
       console.error("photo download failed:", e instanceof Error ? e.message : e);
       Alert.alert("Download failed", e instanceof Error ? e.message : String(e));
@@ -70,7 +94,7 @@ function GeneratedPhoto({ id, index }: { id: string; index: number }) {
   const share = async () => {
     setBusy("share");
     try {
-      const fileUrl = await downloadPhotoToCache(id, index);
+      const fileUrl = await downloadPhotoToCache(id, page);
       await Share.share({ url: fileUrl });
     } catch (e) {
       console.error("photo share failed:", e instanceof Error ? e.message : e);
@@ -81,12 +105,67 @@ function GeneratedPhoto({ id, index }: { id: string; index: number }) {
   };
 
   return (
-    <View style={styles.photoWrap}>
-      <Image
-        source={{ uri: generationPhotoUrl(id, index) }}
-        style={styles.photo}
-        resizeMode="cover"
-      />
+    <View style={styles.carouselWrap}>
+      {hasSound && (
+        <Video
+          source={{ uri: generationSoundUrl(id) }}
+          style={styles.hiddenAudio}
+          paused={!soundOn}
+          repeat
+          audioOnly
+          ignoreSilentSwitch="ignore"
+        />
+      )}
+      <View>
+        <FlatList
+          data={Array.from({ length: count }, (_, i) => i)}
+          keyExtractor={(i) => String(i)}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={pageWidth}
+          decelerationRate="fast"
+          onMomentumScrollEnd={(e) =>
+            setPage(
+              Math.max(
+                0,
+                Math.min(
+                  count - 1,
+                  Math.round(e.nativeEvent.contentOffset.x / pageWidth),
+                ),
+              ),
+            )
+          }
+          renderItem={({ item }) => (
+            <Image
+              source={{ uri: generationPhotoUrl(id, item) }}
+              style={[styles.carouselPhoto, { width: pageWidth }]}
+              resizeMode="cover"
+            />
+          )}
+        />
+        <View style={styles.pageBadge}>
+          <Text style={styles.pageBadgeText}>
+            {page + 1}/{count}
+          </Text>
+        </View>
+        {hasSound && (
+          <Pressable
+            style={styles.soundToggle}
+            onPress={() => setSoundOn((v) => !v)}
+          >
+            <Text style={styles.soundToggleText}>{soundOn ? "🔊" : "🔇"}</Text>
+          </Pressable>
+        )}
+      </View>
+      <View style={styles.dots}>
+        {Array.from({ length: count }, (_, i) => (
+          <View
+            key={i}
+            style={[styles.dot, i === page && styles.dotActive]}
+          />
+        ))}
+      </View>
       <View style={styles.actions}>
         <Pressable
           style={[styles.actionButton, busy != null && styles.disabled]}
@@ -224,10 +303,12 @@ function GenerationDetailScreen({ route }: Props) {
               )}
             </View>
           )}
-          <Text style={styles.sectionLabel}>Generated Photos:</Text>
-          {(generation.outputS3Keys ?? []).map((_, index) => (
-            <GeneratedPhoto key={index} id={id} index={index} />
-          ))}
+          <Text style={styles.sectionLabel}>Generated Carousel:</Text>
+          <PhotoCarousel
+            id={id}
+            count={(generation.outputS3Keys ?? []).length}
+            hasSound={Boolean(generation.soundS3Key)}
+          />
         </View>
       ) : generation.status === "completed" ? (
         <View style={styles.section}>
@@ -341,6 +422,47 @@ const styles = StyleSheet.create({
   },
   playIcon: { color: "#fff", fontSize: 48 },
   soundRow: { gap: 6, marginBottom: 8 },
+  carouselWrap: { gap: 10 },
+  hiddenAudio: { width: 0, height: 0 },
+  carouselPhoto: {
+    aspectRatio: 3 / 4,
+    borderRadius: 12,
+    backgroundColor: "#f2f2f7",
+  },
+  pageBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pageBadgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  soundToggle: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 18,
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  soundToggleText: { fontSize: 16 },
+  dots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 5,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#d0d0d5",
+  },
+  dotActive: { backgroundColor: "#111" },
   soundName: { fontSize: 15, fontWeight: "500" },
   soundButton: {
     backgroundColor: "#e5e5ea",
