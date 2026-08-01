@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { FACE_DIR } from "./lib/env";
 import { detail, formatMs, info, ok, step, timer, warn } from "./lib/log";
@@ -133,5 +133,6 @@ async function readCache(): Promise<Cache> {
 }
 
 async function writeCache(cache: Cache): Promise<void> {
+  await mkdir(FACE_DIR, { recursive: true });
   await writeFile(CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
 }
