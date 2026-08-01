@@ -416,6 +416,22 @@ app.post("/shared-links/:id/animate", wrap(async (req, res) => {
   res.status(201).json(generation);
 }));
 
+app.get("/generations/:id", wrap(async (req, res) => {
+  const generation = await prisma.generation.findUnique({
+    where: { id: req.params.id },
+    include: {
+      sharedLink: {
+        select: { url: true, source: true, thumbnailUrl: true, title: true },
+      },
+    },
+  });
+  if (!generation) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  res.json(generation);
+}));
+
 app.delete("/generations/:id", wrap(async (req, res) => {
   const generation = await prisma.generation.findUnique({
     where: { id: req.params.id },
@@ -468,7 +484,11 @@ app.get("/generations/:id/video", wrap(async (req, res) => {
 app.get("/generations", wrap(async (_req, res) => {
   const generations = await prisma.generation.findMany({
     orderBy: { createdAt: "desc" },
-    include: { sharedLink: { select: { url: true, source: true } } },
+    include: {
+      sharedLink: {
+        select: { url: true, source: true, thumbnailUrl: true, title: true },
+      },
+    },
   });
   res.json(generations);
 }));

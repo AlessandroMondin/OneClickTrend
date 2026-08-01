@@ -8,17 +8,22 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { initRemoteLogging } from "./src/log";
-import type { CharactersStackParamList } from "./src/navigation";
-
-initRemoteLogging();
+import type {
+  CharactersStackParamList,
+  GenerationsStackParamList,
+} from "./src/navigation";
 import AddCharacterScreen from "./src/screens/AddCharacterScreen";
 import CharacterDetailScreen from "./src/screens/CharacterDetailScreen";
 import CharactersListScreen from "./src/screens/CharactersListScreen";
+import GenerationDetailScreen from "./src/screens/GenerationDetailScreen";
 import GenerationsScreen from "./src/screens/GenerationsScreen";
 import SharedLinksScreen from "./src/screens/SharedLinksScreen";
 
+initRemoteLogging();
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<CharactersStackParamList>();
+const GenStack = createNativeStackNavigator<GenerationsStackParamList>();
 
 function CharactersStack() {
   return (
@@ -46,6 +51,23 @@ function handleSharedUrl(deepLink: string | null) {
   if (deepLink) {
     console.log("deep link received:", deepLink);
   }
+}
+
+function GenerationsStack() {
+  return (
+    <GenStack.Navigator>
+      <GenStack.Screen
+        name="GenerationsList"
+        component={GenerationsScreen}
+        options={{ title: "My Generations" }}
+      />
+      <GenStack.Screen
+        name="GenerationDetail"
+        component={GenerationDetailScreen}
+        options={{ title: "Generation" }}
+      />
+    </GenStack.Navigator>
+  );
 }
 
 function App(): React.JSX.Element {
@@ -95,8 +117,8 @@ function App(): React.JSX.Element {
           />
           <Tab.Screen
             name="Generations"
-            component={GenerationsScreen}
-            options={{ title: "My Generations" }}
+            component={GenerationsStack}
+            options={{ title: "My Generations", headerShown: false }}
           />
         </Tab.Navigator>
       </NavigationContainer>
