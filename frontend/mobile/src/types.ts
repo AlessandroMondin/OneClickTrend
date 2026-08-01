@@ -4,6 +4,7 @@ export interface Character {
   id: string;
   name: string;
   createdAt: string;
+  thumbnailUrl?: string | null;
   _count?: { media: number };
 }
 

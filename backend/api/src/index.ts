@@ -45,9 +45,21 @@ app.get("/hello", (_req, res) => {
 app.get("/characters", wrap(async (_req, res) => {
   const characters = await prisma.character.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { media: true } } },
+    include: {
+      _count: { select: { media: true } },
+      media: {
+        where: { kind: MediaKind.PHOTO },
+        orderBy: { position: "asc" },
+        take: 1,
+      },
+    },
   });
-  res.json(characters);
+  res.json(
+    characters.map(({ media, ...c }) => ({
+      ...c,
+      thumbnailUrl: media[0] ? `/media/${media[0].id}` : null,
+    })),
+  );
 }));
 
 app.post("/characters", wrap(async (req, res) => {
@@ -63,7 +75,7 @@ app.post("/characters", wrap(async (req, res) => {
 app.get("/characters/:id", wrap(async (req, res) => {
   const character = await prisma.character.findUnique({
     where: { id: req.params.id },
-    include: { media: { orderBy: { createdAt: "asc" } } },
+    include: { media: { orderBy: [{ kind: "asc" }, { position: "asc" }] } },
   });
   if (!character) {
     res.status(404).json({ error: "not found" });
@@ -84,10 +96,34 @@ app.post("/characters/:id/media", wrap(async (req, res) => {
     return;
   }
 
-  const files: Array<{ filename?: string; contentType?: string }> =
-    req.body?.files ?? [];
+  const files: Array<{
+    filename?: string;
+    contentType?: string;
+    position?: number;
+  }> = req.body?.files ?? [];
   if (!Array.isArray(files) || files.length === 0) {
     res.status(400).json({ error: "files required" });
+    return;
+  }
+
+  // Limits: up to 4 pictures and 1 video per character.
+  const isVideo = (f: { contentType?: string }) =>
+    (f.contentType ?? "").startsWith("video/");
+  const existing = await prisma.mediaAsset.groupBy({
+    by: ["kind"],
+    where: { characterId: character.id },
+    _count: true,
+  });
+  const count = (kind: MediaKind) =>
+    existing.find((e) => e.kind === kind)?._count ?? 0;
+  const newPhotos = files.filter((f) => !isVideo(f)).length;
+  const newVideos = files.filter(isVideo).length;
+  if (count(MediaKind.PHOTO) + newPhotos > 4) {
+    res.status(400).json({ error: "max 4 pictures per character" });
+    return;
+  }
+  if (count(MediaKind.VIDEO) + newVideos > 1) {
+    res.status(400).json({ error: "max 1 video per character" });
     return;
   }
 
@@ -100,11 +136,10 @@ app.post("/characters/:id/media", wrap(async (req, res) => {
     const asset = await prisma.mediaAsset.create({
       data: {
         characterId: character.id,
-        kind: contentType.startsWith("video/")
-          ? MediaKind.VIDEO
-          : MediaKind.PHOTO,
+        kind: isVideo(file) ? MediaKind.VIDEO : MediaKind.PHOTO,
         s3Key,
         mimeType: contentType,
+        position: Number.isInteger(file.position) ? file.position! : 0,
       },
     });
 

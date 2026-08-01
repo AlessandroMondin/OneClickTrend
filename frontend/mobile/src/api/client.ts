@@ -35,7 +35,7 @@ export function getCharacter(id: string): Promise<CharacterDetail> {
 
 export function requestUploadUrls(
   characterId: string,
-  files: Array<{ filename: string; contentType: string }>,
+  files: Array<{ filename: string; contentType: string; position: number }>,
 ): Promise<UploadTarget[]> {
   return fetch(`${API_URL}/characters/${characterId}/media`, {
     method: "POST",

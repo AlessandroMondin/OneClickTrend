@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from "react";
 import {
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -9,7 +10,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { listCharacters } from "../api/client";
+import { listCharacters, mediaUrl } from "../api/client";
 import type { CharactersStackParamList } from "../navigation";
 import type { Character } from "../types";
 
@@ -46,6 +47,18 @@ function CharactersListScreen({ navigation }: Props) {
               })
             }
           >
+            {item.thumbnailUrl ? (
+              <Image
+                source={{ uri: mediaUrl(item.thumbnailUrl) }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Text style={styles.avatarInitial}>
+                  {item.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.count}>
               {item._count?.media ?? 0} media
@@ -71,14 +84,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   list: { padding: 16, gap: 12 },
   row: {
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     backgroundColor: "#f2f2f7",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
   },
-  name: { fontSize: 17, fontWeight: "600" },
+  avatar: { width: 48, height: 48, borderRadius: 24 },
+  avatarPlaceholder: {
+    backgroundColor: "#ddd",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitial: { fontSize: 20, fontWeight: "700", color: "#666" },
+  name: { fontSize: 17, fontWeight: "600", flex: 1 },
   count: { fontSize: 14, color: "#666" },
   empty: { textAlign: "center", color: "#999", marginTop: 48, fontSize: 16 },
   error: { color: "#c00", textAlign: "center", padding: 8 },

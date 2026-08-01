@@ -24,23 +24,42 @@ import {
 } from "../api/client";
 import type { CharactersStackParamList } from "../navigation";
 
+const MAX_PHOTOS = 4;
+
 type Props = NativeStackScreenProps<CharactersStackParamList, "AddCharacter">;
 
 function AddCharacterScreen({ navigation }: Props) {
   const [name, setName] = useState("");
-  const [assets, setAssets] = useState<Asset[]>([]);
+  const [photos, setPhotos] = useState<Asset[]>([]);
+  const [video, setVideo] = useState<Asset | null>(null);
   const [saving, setSaving] = useState(false);
 
   const addAssets = (picked?: Asset[]) => {
-    if (picked?.length) {
-      setAssets((prev) => [...prev, ...picked]);
+    if (!picked?.length) {
+      return;
+    }
+    const newPhotos = picked.filter((a) => !a.type?.startsWith("video/"));
+    const newVideos = picked.filter((a) => a.type?.startsWith("video/"));
+
+    setPhotos((prev) => {
+      const merged = [...prev, ...newPhotos];
+      if (merged.length > MAX_PHOTOS) {
+        Alert.alert(`Up to ${MAX_PHOTOS} pictures`);
+      }
+      return merged.slice(0, MAX_PHOTOS);
+    });
+    if (newVideos.length > 0) {
+      if (video) {
+        Alert.alert("Only one video");
+      }
+      setVideo(newVideos[0]);
     }
   };
 
   const uploadMedia = async () => {
     const r = await launchImageLibrary({
       mediaType: "mixed",
-      selectionLimit: 0,
+      selectionLimit: MAX_PHOTOS + 1,
     });
     addAssets(r.assets);
   };
@@ -71,6 +90,22 @@ function AddCharacterScreen({ navigation }: Props) {
     ]);
   };
 
+  const movePhoto = (index: number, direction: -1 | 1) => {
+    setPhotos((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.length) {
+        return prev;
+      }
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const save = async () => {
     if (!name.trim()) {
       Alert.alert("Name required");
@@ -78,18 +113,23 @@ function AddCharacterScreen({ navigation }: Props) {
     }
     setSaving(true);
     try {
+      const assets = [
+        ...photos.map((a, i) => ({ asset: a, position: i })),
+        ...(video ? [{ asset: video, position: 100 }] : []),
+      ];
       const character = await createCharacter(name.trim());
-      const files = assets.map((a, i) => ({
-        filename: a.fileName ?? `media-${i}`,
-        contentType: a.type ?? "application/octet-stream",
-      }));
-      if (files.length > 0) {
+      if (assets.length > 0) {
+        const files = assets.map(({ asset, position }, i) => ({
+          filename: asset.fileName ?? `media-${i}`,
+          contentType: asset.type ?? "application/octet-stream",
+          position,
+        }));
         const targets = await requestUploadUrls(character.id, files);
         await Promise.all(
           targets.map((t, i) =>
             uploadToPresignedUrl(
               t.uploadUrl,
-              assets[i].uri!,
+              assets[i].asset.uri!,
               files[i].contentType,
             ),
           ),
@@ -123,18 +163,57 @@ function AddCharacterScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
+      <Text style={styles.hint}>
+        Up to {MAX_PHOTOS} pictures and 1 video. The first picture is the
+        character image — reorder with the arrows.
+      </Text>
+
       <View style={styles.thumbGrid}>
-        {assets.map((a, i) => (
+        {photos.map((a, i) => (
           <View key={`${a.uri}-${i}`} style={styles.thumbWrap}>
-            {a.type?.startsWith("video/") ? (
-              <View style={[styles.thumb, styles.videoThumb]}>
-                <Text style={styles.videoLabel}>VIDEO</Text>
+            <Image source={{ uri: a.uri }} style={styles.thumb} />
+            {i === 0 && (
+              <View style={styles.mainBadge}>
+                <Text style={styles.mainBadgeText}>MAIN</Text>
               </View>
-            ) : (
-              <Image source={{ uri: a.uri }} style={styles.thumb} />
             )}
+            <View style={styles.thumbControls}>
+              <Pressable
+                style={styles.controlButton}
+                onPress={() => movePhoto(i, -1)}
+              >
+                <Text style={styles.controlText}>◀</Text>
+              </Pressable>
+              <Pressable
+                style={styles.controlButton}
+                onPress={() => removePhoto(i)}
+              >
+                <Text style={styles.controlText}>✕</Text>
+              </Pressable>
+              <Pressable
+                style={styles.controlButton}
+                onPress={() => movePhoto(i, 1)}
+              >
+                <Text style={styles.controlText}>▶</Text>
+              </Pressable>
+            </View>
           </View>
         ))}
+        {video && (
+          <View style={styles.thumbWrap}>
+            <View style={[styles.thumb, styles.videoThumb]}>
+              <Text style={styles.videoLabel}>VIDEO</Text>
+            </View>
+            <View style={styles.thumbControls}>
+              <Pressable
+                style={styles.controlButton}
+                onPress={() => setVideo(null)}
+              >
+                <Text style={styles.controlText}>✕</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       </View>
 
       <Pressable
@@ -171,15 +250,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pickerText: { fontSize: 15, fontWeight: "500" },
+  hint: { fontSize: 13, color: "#666" },
   thumbGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  thumbWrap: { width: "23%", aspectRatio: 1 },
-  thumb: { width: "100%", height: "100%", borderRadius: 8 },
+  thumbWrap: { width: "23%" },
+  thumb: { width: "100%", aspectRatio: 1, borderRadius: 8 },
+  mainBadge: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    backgroundColor: "#111",
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  mainBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
   videoThumb: {
     backgroundColor: "#111",
     alignItems: "center",
     justifyContent: "center",
   },
   videoLabel: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  thumbControls: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  controlButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  controlText: { fontSize: 13, color: "#333" },
   saveButton: {
     backgroundColor: "#111",
     borderRadius: 12,

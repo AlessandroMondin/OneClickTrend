@@ -28,6 +28,7 @@ model MediaAsset {
   kind        MediaKind
   s3Key       String
   mimeType    String
+  position    Int       @default(0)
   createdAt   DateTime  @default(now())
 }
 
