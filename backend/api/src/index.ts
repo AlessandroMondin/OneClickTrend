@@ -194,6 +194,28 @@ app.get("/media/:id", wrap(async (req, res) => {
   (obj.Body as Readable).pipe(res);
 }));
 
+app.patch("/characters/:id/media-order", wrap(async (req, res) => {
+  const ids: string[] = req.body?.order ?? [];
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ error: "order required" });
+    return;
+  }
+  const owned = await prisma.mediaAsset.findMany({
+    where: { id: { in: ids }, characterId: req.params.id },
+    select: { id: true },
+  });
+  if (owned.length !== ids.length) {
+    res.status(400).json({ error: "unknown media in order" });
+    return;
+  }
+  await prisma.$transaction(
+    ids.map((id, position) =>
+      prisma.mediaAsset.update({ where: { id }, data: { position } }),
+    ),
+  );
+  res.status(204).end();
+}));
+
 app.delete("/characters/:id", wrap(async (req, res) => {
   const character = await prisma.character.findUnique({
     where: { id: req.params.id },

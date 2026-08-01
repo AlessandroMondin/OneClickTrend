@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { DraggableGrid } from "react-native-draggable-grid";
 import {
   Asset,
   launchCamera,
@@ -17,16 +18,18 @@ import {
 } from "react-native-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import {
-  createCharacter,
-  requestUploadUrls,
-  uploadToPresignedUrl,
-} from "../api/client";
+import { createCharacter } from "../api/client";
+import { uploadAssets } from "../media";
 import type { CharactersStackParamList } from "../navigation";
 
 const MAX_PHOTOS = 4;
 
 type Props = NativeStackScreenProps<CharactersStackParamList, "AddCharacter">;
+
+interface GridItem {
+  key: string;
+  asset: Asset;
+}
 
 function AddCharacterScreen({ navigation }: Props) {
   const [name, setName] = useState("");
@@ -90,20 +93,16 @@ function AddCharacterScreen({ navigation }: Props) {
     ]);
   };
 
-  const movePhoto = (index: number, direction: -1 | 1) => {
-    setPhotos((prev) => {
-      const target = index + direction;
-      if (target < 0 || target >= prev.length) {
-        return prev;
-      }
-      const next = [...prev];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  };
-
-  const removePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  const confirmRemovePhoto = (key: string) => {
+    Alert.alert("Remove picture?", undefined, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () =>
+          setPhotos((prev) => prev.filter((a, i) => `${a.uri}-${i}` !== key)),
+      },
+    ]);
   };
 
   const save = async () => {
@@ -113,36 +112,27 @@ function AddCharacterScreen({ navigation }: Props) {
     }
     setSaving(true);
     try {
-      const assets = [
-        ...photos.map((a, i) => ({ asset: a, position: i })),
-        ...(video ? [{ asset: video, position: 100 }] : []),
-      ];
       const character = await createCharacter(name.trim());
-      if (assets.length > 0) {
-        const files = assets.map(({ asset, position }, i) => ({
-          filename: asset.fileName ?? `media-${i}`,
-          contentType: asset.type ?? "application/octet-stream",
-          position,
-        }));
-        const targets = await requestUploadUrls(character.id, files);
-        await Promise.all(
-          targets.map((t, i) =>
-            uploadToPresignedUrl(
-              t.uploadUrl,
-              assets[i].asset.uri!,
-              files[i].contentType,
-            ),
-          ),
-        );
-      }
+      await uploadAssets(character.id, [
+        ...photos.map((asset, i) => ({ asset, position: i })),
+        ...(video ? [{ asset: video, position: 100 }] : []),
+      ]);
       navigation.goBack();
     } catch (e) {
-      console.error("save character failed:", e instanceof Error ? `${e.message}` : e);
+      console.error(
+        "save character failed:",
+        e instanceof Error ? `${e.message}` : e,
+      );
       Alert.alert("Save failed", e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
     }
   };
+
+  const gridData: GridItem[] = photos.map((asset, i) => ({
+    key: `${asset.uri}-${i}`,
+    asset,
+  }));
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -164,57 +154,42 @@ function AddCharacterScreen({ navigation }: Props) {
       </View>
 
       <Text style={styles.hint}>
-        Up to {MAX_PHOTOS} pictures and 1 video. The first picture is the
-        character image — reorder with the arrows.
+        Up to {MAX_PHOTOS} pictures and 1 video. Drag to reorder — the first
+        picture is the character image. Tap a picture to remove it.
       </Text>
 
-      <View style={styles.thumbGrid}>
-        {photos.map((a, i) => (
-          <View key={`${a.uri}-${i}`} style={styles.thumbWrap}>
-            <Image source={{ uri: a.uri }} style={styles.thumb} />
-            {i === 0 && (
-              <View style={styles.mainBadge}>
-                <Text style={styles.mainBadgeText}>MAIN</Text>
-              </View>
-            )}
-            <View style={styles.thumbControls}>
-              <Pressable
-                style={styles.controlButton}
-                onPress={() => movePhoto(i, -1)}
-              >
-                <Text style={styles.controlText}>◀</Text>
-              </Pressable>
-              <Pressable
-                style={styles.controlButton}
-                onPress={() => removePhoto(i)}
-              >
-                <Text style={styles.controlText}>✕</Text>
-              </Pressable>
-              <Pressable
-                style={styles.controlButton}
-                onPress={() => movePhoto(i, 1)}
-              >
-                <Text style={styles.controlText}>▶</Text>
-              </Pressable>
+      {photos.length > 0 && (
+        <DraggableGrid<GridItem>
+          numColumns={4}
+          data={gridData}
+          onDragRelease={(data) => setPhotos(data.map((d) => d.asset))}
+          onItemPress={(item) => confirmRemovePhoto(item.key)}
+          renderItem={(item, order) => (
+            <View style={styles.thumbWrap} key={item.key}>
+              <Image source={{ uri: item.asset.uri }} style={styles.thumb} />
+              {order === 0 && (
+                <View style={styles.mainBadge}>
+                  <Text style={styles.mainBadgeText}>MAIN</Text>
+                </View>
+              )}
             </View>
+          )}
+        />
+      )}
+
+      {video && (
+        <View style={styles.videoRow}>
+          <View style={[styles.thumb, styles.videoThumb, styles.videoTile]}>
+            <Text style={styles.videoLabel}>VIDEO</Text>
           </View>
-        ))}
-        {video && (
-          <View style={styles.thumbWrap}>
-            <View style={[styles.thumb, styles.videoThumb]}>
-              <Text style={styles.videoLabel}>VIDEO</Text>
-            </View>
-            <View style={styles.thumbControls}>
-              <Pressable
-                style={styles.controlButton}
-                onPress={() => setVideo(null)}
-              >
-                <Text style={styles.controlText}>✕</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      </View>
+          <Pressable
+            style={styles.removeVideoButton}
+            onPress={() => setVideo(null)}
+          >
+            <Text style={styles.removeVideoText}>Remove video</Text>
+          </Pressable>
+        </View>
+      )}
 
       <Pressable
         style={[styles.saveButton, saving && styles.saveDisabled]}
@@ -251,9 +226,8 @@ const styles = StyleSheet.create({
   },
   pickerText: { fontSize: 15, fontWeight: "500" },
   hint: { fontSize: 13, color: "#666" },
-  thumbGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  thumbWrap: { width: "23%" },
-  thumb: { width: "100%", aspectRatio: 1, borderRadius: 8 },
+  thumbWrap: { width: 80, height: 80 },
+  thumb: { width: "100%", height: "100%", borderRadius: 8 },
   mainBadge: {
     position: "absolute",
     top: 4,
@@ -264,23 +238,16 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   mainBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
+  videoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  videoTile: { width: 80, height: 80 },
   videoThumb: {
     backgroundColor: "#111",
     alignItems: "center",
     justifyContent: "center",
   },
   videoLabel: { color: "#fff", fontSize: 12, fontWeight: "700" },
-  thumbControls: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 4,
-  },
-  controlButton: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 2,
-  },
-  controlText: { fontSize: 13, color: "#333" },
+  removeVideoButton: { padding: 8 },
+  removeVideoText: { color: "#c00", fontSize: 14 },
   saveButton: {
     backgroundColor: "#111",
     borderRadius: 12,

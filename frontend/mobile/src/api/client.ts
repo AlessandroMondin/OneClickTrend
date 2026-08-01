@@ -60,6 +60,20 @@ export async function uploadToPresignedUrl(
   }
 }
 
+export async function reorderMedia(
+  characterId: string,
+  order: string[],
+): Promise<void> {
+  const res = await fetch(`${API_URL}/characters/${characterId}/media-order`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ order }),
+  });
+  if (!res.ok) {
+    throw new Error(`Reorder failed: ${res.status}`);
+  }
+}
+
 export async function deleteCharacter(id: string): Promise<void> {
   const res = await fetch(`${API_URL}/characters/${id}`, { method: "DELETE" });
   if (!res.ok) {

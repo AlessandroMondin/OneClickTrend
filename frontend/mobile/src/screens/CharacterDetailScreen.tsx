@@ -1,13 +1,14 @@
 import React, { useCallback, useState } from "react";
 import {
   Alert,
-  FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { DraggableGrid } from "react-native-draggable-grid";
 import {
   Asset,
   launchCamera,
@@ -22,10 +23,11 @@ import {
   deleteMedia,
   getCharacter,
   mediaUrl,
+  reorderMedia,
 } from "../api/client";
 import { uploadAssets } from "../media";
 import type { CharactersStackParamList } from "../navigation";
-import type { CharacterDetail } from "../types";
+import type { CharacterDetail, MediaAsset } from "../types";
 
 const MAX_PHOTOS = 4;
 
@@ -33,6 +35,11 @@ type Props = NativeStackScreenProps<
   CharactersStackParamList,
   "CharacterDetail"
 >;
+
+interface GridItem {
+  key: string;
+  media: MediaAsset;
+}
 
 function CharacterDetailScreen({ route, navigation }: Props) {
   const [character, setCharacter] = useState<CharacterDetail | null>(null);
@@ -87,22 +94,21 @@ function CharacterDetailScreen({ route, navigation }: Props) {
     }, [navigation, route.params.name, refetch, confirmDeleteCharacter]),
   );
 
-  const photoCount =
-    character?.media.filter((m) => m.kind === "PHOTO").length ?? 0;
-  const hasVideo = character?.media.some((m) => m.kind === "VIDEO") ?? false;
+  const photos = character?.media.filter((m) => m.kind === "PHOTO") ?? [];
+  const video = character?.media.find((m) => m.kind === "VIDEO") ?? null;
 
   const addPicked = async (picked?: Asset[]) => {
     if (!picked?.length || !character) {
       return;
     }
-    const photos = picked
+    const newPhotos = picked
       .filter((a) => !a.type?.startsWith("video/"))
-      .slice(0, MAX_PHOTOS - photoCount);
-    const video = hasVideo
+      .slice(0, MAX_PHOTOS - photos.length);
+    const newVideo = video
       ? null
       : picked.find((a) => a.type?.startsWith("video/")) ?? null;
 
-    if (photos.length === 0 && !video) {
+    if (newPhotos.length === 0 && !newVideo) {
       Alert.alert(`Already at ${MAX_PHOTOS} pictures / 1 video`);
       return;
     }
@@ -110,8 +116,11 @@ function CharacterDetailScreen({ route, navigation }: Props) {
     setBusy(true);
     try {
       await uploadAssets(character.id, [
-        ...photos.map((asset, i) => ({ asset, position: photoCount + i })),
-        ...(video ? [{ asset: video, position: 100 }] : []),
+        ...newPhotos.map((asset, i) => ({
+          asset,
+          position: photos.length + i,
+        })),
+        ...(newVideo ? [{ asset: newVideo, position: 100 }] : []),
       ]);
       refetch();
     } catch (e) {
@@ -122,10 +131,10 @@ function CharacterDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  const uploadMedia = async () => {
+  const uploadMediaAction = async () => {
     const r = await launchImageLibrary({
       mediaType: "mixed",
-      selectionLimit: MAX_PHOTOS - photoCount + (hasVideo ? 0 : 1),
+      selectionLimit: MAX_PHOTOS - photos.length + (video ? 0 : 1),
     });
     await addPicked(r.assets);
   };
@@ -181,45 +190,86 @@ function CharacterDetailScreen({ route, navigation }: Props) {
     ]);
   };
 
+  const onReorder = async (data: GridItem[]) => {
+    if (!character) {
+      return;
+    }
+    const orderedPhotos = data.map((d) => d.media);
+    // Optimistic: show the new order immediately, then persist.
+    setCharacter({
+      ...character,
+      media: [...orderedPhotos, ...(video ? [video] : [])],
+    });
+    try {
+      await reorderMedia(
+        character.id,
+        orderedPhotos.map((m) => m.id),
+      );
+    } catch (e) {
+      console.error("reorder failed:", e instanceof Error ? e.message : e);
+      refetch();
+    }
+  };
+
+  const gridData: GridItem[] = photos.map((media) => ({
+    key: media.id,
+    media,
+  }));
+
   return (
     <View style={styles.container}>
-      {error && <Text style={styles.error}>{error}</Text>}
-      <FlatList
-        data={character?.media ?? []}
-        keyExtractor={(m) => m.id}
-        numColumns={2}
-        contentContainerStyle={styles.grid}
-        columnWrapperStyle={styles.gridRow}
-        renderItem={({ item }) => (
-          <View style={styles.tileWrap}>
-            {item.kind === "VIDEO" ? (
-              <Video
-                source={{ uri: mediaUrl(item.url) }}
-                style={styles.tile}
-                controls
-                paused
-                resizeMode="cover"
-              />
-            ) : (
+      <ScrollView contentContainerStyle={styles.content}>
+        {error && <Text style={styles.error}>{error}</Text>}
+        {photos.length > 0 && (
+          <Text style={styles.hint}>
+            Drag to reorder — the first picture is the character image. Tap a
+            picture to remove it.
+          </Text>
+        )}
+        <DraggableGrid<GridItem>
+          numColumns={2}
+          data={gridData}
+          onDragRelease={onReorder}
+          onItemPress={(item) => confirmRemove(item.media.id)}
+          renderItem={(item, order) => (
+            <View style={styles.tileWrap} key={item.key}>
               <Image
-                source={{ uri: mediaUrl(item.url) }}
+                source={{ uri: mediaUrl(item.media.url) }}
                 style={styles.tile}
               />
-            )}
+              {order === 0 && (
+                <View style={styles.mainBadge}>
+                  <Text style={styles.mainBadgeText}>MAIN</Text>
+                </View>
+              )}
+            </View>
+          )}
+        />
+        {video && (
+          <View style={styles.videoWrap}>
+            <Video
+              source={{ uri: mediaUrl(video.url) }}
+              style={styles.videoTile}
+              controls
+              paused
+              resizeMode="cover"
+            />
             <Pressable
-              style={styles.removeButton}
-              onPress={() => confirmRemove(item.id)}
+              style={styles.removeVideoButton}
+              onPress={() => confirmRemove(video.id)}
             >
-              <Text style={styles.removeText}>✕</Text>
+              <Text style={styles.removeVideoText}>Remove video</Text>
             </Pressable>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No media</Text>}
-      />
+        {!character?.media.length && (
+          <Text style={styles.empty}>No media</Text>
+        )}
+      </ScrollView>
       <View style={styles.pickerRow}>
         <Pressable
           style={[styles.pickerButton, busy && styles.disabled]}
-          onPress={uploadMedia}
+          onPress={uploadMediaAction}
           disabled={busy}
         >
           <Text style={styles.pickerText}>Upload Media</Text>
@@ -238,27 +288,34 @@ function CharacterDetailScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  grid: { padding: 12, gap: 12 },
-  gridRow: { gap: 12 },
-  tileWrap: { flex: 1 },
+  content: { padding: 12, gap: 12 },
+  hint: { fontSize: 13, color: "#666", paddingHorizontal: 4 },
+  tileWrap: { width: 170, height: 170 },
   tile: {
     width: "100%",
-    aspectRatio: 1,
+    height: "100%",
     borderRadius: 12,
     backgroundColor: "#f2f2f7",
   },
-  removeButton: {
+  mainBadge: {
     position: "absolute",
     top: 6,
-    right: 6,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    left: 6,
+    backgroundColor: "#111",
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
   },
-  removeText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  mainBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  videoWrap: { gap: 4 },
+  videoTile: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: 12,
+    backgroundColor: "#f2f2f7",
+  },
+  removeVideoButton: { alignSelf: "center", padding: 8 },
+  removeVideoText: { color: "#c00", fontSize: 14 },
   empty: { textAlign: "center", color: "#999", marginTop: 48, fontSize: 16 },
   error: { color: "#c00", textAlign: "center", padding: 8 },
   pickerRow: { flexDirection: "row", gap: 12, padding: 16 },
