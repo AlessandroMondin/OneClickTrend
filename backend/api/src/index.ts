@@ -341,7 +341,7 @@ app.get("/shared-links", wrap(async (_req, res) => {
   // Backfill source + thumbnails for links saved before enrichment existed.
   for (const link of links) {
     const source = sourceFromUrl(link.url);
-    if (source === "tiktok" && !link.thumbnailUrl) {
+    if (source === "tiktok" && (!link.thumbnailUrl || !link.title)) {
       const meta = await fetchOembed(link.url);
       if (meta.thumbnailUrl || source !== link.source) {
         Object.assign(
