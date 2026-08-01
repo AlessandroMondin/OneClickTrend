@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { CameraRoll } from "@react-native-camera-roll/camera-roll";
 import ReactNativeBlobUtil from "react-native-blob-util";
-import Video from "react-native-video";
+import Video, { VideoRef } from "react-native-video";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -41,6 +41,7 @@ function GenerationDetailScreen({ route }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [busy, setBusy] = useState<"download" | "share" | null>(null);
+  const videoRef = useRef<VideoRef>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -113,30 +114,34 @@ function GenerationDetailScreen({ route }: Props) {
       {generation.status === "completed" ? (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Play Generated Content:</Text>
-          <Pressable
-            style={styles.videoPlaceholder}
-            onPress={() => setPlaying(true)}
-          >
-            <VideoThumbnail
-              uri={generationVideoUrl(id)}
-              style={styles.videoThumb}
-            />
-            <View style={styles.playOverlay}>
-              <Text style={styles.playIcon}>▶</Text>
-            </View>
-          </Pressable>
-          {playing && (
-            // Rendered offscreen; the fullscreen prop presents the native
-            // player immediately. Dismissing unmounts it.
+          {playing ? (
             <Video
+              ref={videoRef}
               source={{ uri: generationVideoUrl(id) }}
-              style={styles.hiddenVideo}
-              fullscreen
+              style={styles.videoPlaceholder}
               controls
               resizeMode="contain"
+              onLoad={() => videoRef.current?.presentFullscreenPlayer()}
               onFullscreenPlayerWillDismiss={() => setPlaying(false)}
               onEnd={() => setPlaying(false)}
+              onError={(e) => {
+                console.error("video playback error:", JSON.stringify(e));
+                setPlaying(false);
+              }}
             />
+          ) : (
+            <Pressable
+              style={styles.videoPlaceholder}
+              onPress={() => setPlaying(true)}
+            >
+              <VideoThumbnail
+                uri={generationVideoUrl(id)}
+                style={styles.videoThumb}
+              />
+              <View style={styles.playOverlay}>
+                <Text style={styles.playIcon}>▶</Text>
+              </View>
+            </Pressable>
           )}
           <View style={styles.actions}>
             <Pressable
@@ -213,7 +218,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.25)",
   },
   playIcon: { color: "#fff", fontSize: 48 },
-  hiddenVideo: { width: 1, height: 1, opacity: 0 },
   actions: { flexDirection: "row", gap: 12 },
   actionButton: {
     flex: 1,
