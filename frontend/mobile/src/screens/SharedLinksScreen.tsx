@@ -133,9 +133,10 @@ function SharedLinksScreen() {
               </Pressable>
               <Pressable
                 style={styles.deleteButton}
+                hitSlop={6}
                 onPress={() => confirmDelete(item)}
               >
-                <Text style={styles.deleteText}>Delete</Text>
+                <Text style={styles.deleteText}>✕</Text>
               </Pressable>
             </View>
           </View>
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   linkInfo: { flex: 1 },
   url: { fontSize: 14, fontWeight: "500" },
   date: { fontSize: 12, color: "#666", marginTop: 2 },
-  actions: { gap: 6, alignItems: "stretch" },
+  actions: { flexDirection: "row", alignItems: "center", gap: 10 },
   animateButton: {
     backgroundColor: "#111",
     borderRadius: 10,
@@ -193,12 +194,14 @@ const styles = StyleSheet.create({
   },
   animateText: { color: "#fff", fontSize: 14, fontWeight: "600" },
   deleteButton: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#e5e5ea",
     alignItems: "center",
+    justifyContent: "center",
   },
-  deleteText: { color: "#c00", fontSize: 13, fontWeight: "500" },
+  deleteText: { color: "#c00", fontSize: 13, fontWeight: "700" },
   empty: {
     textAlign: "center",
     color: "#999",
