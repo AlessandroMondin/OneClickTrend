@@ -106,7 +106,8 @@ async function stillUsable(characterId: string): Promise<boolean> {
   }
 }
 
-async function findFacePhoto(): Promise<string> {
+/** Shared with pipeline v2, which needs the same photo as a Runway reference. */
+export async function findFacePhoto(): Promise<string> {
   const entries = await readdir(FACE_DIR).catch(() => [] as string[]);
   const images = entries
     .filter((name) => IMAGE_EXTENSIONS.some((ext) => name.toLowerCase().endsWith(ext)))

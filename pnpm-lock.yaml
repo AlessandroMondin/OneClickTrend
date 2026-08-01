@@ -26,6 +26,9 @@ importers:
       '@oneclicktrend/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@runwayml/sdk':
+        specifier: ^4.13.1
+        version: 4.13.1
       apify-client:
         specifier: ^2.12.0
         version: 2.24.0
@@ -1442,6 +1445,10 @@ packages:
 
   '@react-navigation/routers@7.6.4':
     resolution: {integrity: sha512-GI7eJm8/KsZUQaYcXvEExikKurRZRgEsSzyZ7faENfi65yqJBCXjDMwyN1pF6pNW1MoLH1ErDwDivFxY6BzD3w==}
+
+  '@runwayml/sdk@4.13.1':
+    resolution: {integrity: sha512-LPHZ1WMA3LUhNqNccFbacgQ+vD1l90vilTi04kJLrH3ZR7AP0LYbU3OzuJUozKufwF6NXosOWTJmyAXY7fnfyQ==}
+    hasBin: true
 
   '@sideway/address@4.1.5':
     resolution: {integrity: sha512-IqO/DUQHUkPeixNQ8n0JA6102hT9CmaljNTPmQ1u8MEhBo/R4Q8eKLN/vGZxuebwOroDB4cbpjheD4+/sKFK4Q==}
@@ -6198,6 +6205,8 @@ snapshots:
   '@react-navigation/routers@7.6.4':
     dependencies:
       nanoid: 3.3.16
+
+  '@runwayml/sdk@4.13.1': {}
 
   '@sideway/address@4.1.5':
     dependencies:
