@@ -7,6 +7,8 @@ export PATH := $(NODE_DIR):$(PATH)
 
 MOBILE := frontend/mobile
 CONFIG := $(MOBILE)/src/config.ts
+BUNDLE_ID := org.reactjs.native.example.OneClickTrend
+DEVICE_ID := $(shell xcrun devicectl list devices 2>/dev/null | grep -oE '[0-9A-F]{8}-[0-9A-F-]{27}' | head -1)
 
 .PHONY: install backend configure-api iphone iphone-debug simulator metro clean
 
@@ -28,7 +30,13 @@ configure-api:
 
 ## iphone: build a Release app and install it on the connected iPhone (no Metro needed)
 iphone: configure-api
-	cd $(MOBILE) && npx react-native run-ios --device --mode Release
+	@if [ -z "$(DEVICE_ID)" ]; then echo "No iPhone found — plug it in and unlock it"; exit 1; fi
+	cd $(MOBILE)/ios && xcodebuild -workspace OneClickTrend.xcworkspace -scheme OneClickTrend \
+		-configuration Release -destination 'generic/platform=iOS' \
+		-derivedDataPath build/DerivedData -allowProvisioningUpdates build
+	xcrun devicectl device install app --device $(DEVICE_ID) \
+		$(MOBILE)/ios/build/DerivedData/Build/Products/Release-iphoneos/OneClickTrend.app
+	xcrun devicectl device process launch --device $(DEVICE_ID) $(BUNDLE_ID)
 
 ## iphone-debug: Debug build on the iPhone (needs Metro: run `make metro` in another terminal)
 iphone-debug: configure-api
