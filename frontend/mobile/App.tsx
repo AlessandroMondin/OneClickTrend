@@ -39,6 +39,9 @@ function CharactersStack() {
 }
 
 function handleSharedUrl(deepLink: string | null) {
+  if (deepLink) {
+    console.log("deep link received:", deepLink);
+  }
   if (!deepLink?.startsWith("oneclicktrend://shared")) {
     return;
   }

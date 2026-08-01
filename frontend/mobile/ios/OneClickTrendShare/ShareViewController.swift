@@ -7,7 +7,19 @@ class ShareViewController: UIViewController {
 
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+    remoteLog("share extension launched")
     handleShare()
+  }
+
+  // Local-dev logging to the API (logs/app.log on the Mac).
+  private func remoteLog(_ message: String) {
+    guard let url = URL(string: "\(Config.apiUrl)/logs") else { return }
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    let body = ["level": "ext", "message": message]
+    request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+    URLSession.shared.dataTask(with: request).resume()
   }
 
   private func handleShare() {
@@ -29,12 +41,14 @@ class ShareViewController: UIViewController {
         self?.forward(item as? String ?? "")
       }
     } else {
+      remoteLog("no url/text attachment found")
       complete()
     }
   }
 
   private func forward(_ shared: String) {
     DispatchQueue.main.async {
+      self.remoteLog("got shared content: \(shared)")
       let encoded = shared.addingPercentEncoding(
         withAllowedCharacters: .alphanumerics
       ) ?? ""
@@ -42,7 +56,10 @@ class ShareViewController: UIViewController {
          let url = URL(string: "oneclicktrend://shared?url=\(encoded)") {
         self.openMainApp(url)
       }
-      self.complete()
+      // Give openURL: and the log request a moment before the extension dies.
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        self.complete()
+      }
     }
   }
 
@@ -54,10 +71,12 @@ class ShareViewController: UIViewController {
     while let current = responder {
       if current.responds(to: selector), current is UIApplication {
         current.perform(selector, with: url)
+        remoteLog("opened main app via responder chain")
         return
       }
       responder = current.next
     }
+    remoteLog("openURL failed: no UIApplication in responder chain")
   }
 
   private func complete() {

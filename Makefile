@@ -26,6 +26,7 @@ configure-api:
 	@IP=$$(ipconfig getifaddr en0); \
 	if [ -z "$$IP" ]; then echo "No LAN IP found on en0 — is Wi-Fi on?"; exit 1; fi; \
 	sed -i '' "s|http://[^\"]*|http://$$IP:3000|" $(CONFIG); \
+	sed -i '' "s|http://[^\"]*|http://$$IP:3000|" $(MOBILE)/ios/OneClickTrendShare/Config.swift; \
 	sed -i '' "s|^S3_PUBLIC_ENDPOINT=.*|S3_PUBLIC_ENDPOINT=http://$$IP:4566|" backend/api/.env; \
 	echo "API_URL -> http://$$IP:3000  S3_PUBLIC_ENDPOINT -> http://$$IP:4566"
 

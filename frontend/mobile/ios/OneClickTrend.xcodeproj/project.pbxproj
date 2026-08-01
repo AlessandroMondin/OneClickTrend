@@ -13,6 +13,7 @@
 		3F620CAC09BB7811782113D5 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8E30110635D84BFAF4140E /* ShareViewController.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		C0F8D76016081575E8283C04 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88C3F002C6E2390B122C1BD /* Config.swift */; };
 		C556EBAC99C31DEEFE01C3C1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60DD77497D1C86DD66D4A5ED /* Foundation.framework */; };
 		D78B72A0FE6C02847D1B3206 /* OneClickTrendShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = CDD5EE2EF1969EF44B835B40 /* OneClickTrendShare.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -54,6 +55,7 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = OneClickTrend/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9D8E30110635D84BFAF4140E /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		CDD5EE2EF1969EF44B835B40 /* OneClickTrendShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = OneClickTrendShare.appex; path = OneClickTrendShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E88C3F002C6E2390B122C1BD /* Config.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		EB20E0C1CCC2B438DA6252AC /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -144,6 +146,7 @@
 			children = (
 				9D8E30110635D84BFAF4140E /* ShareViewController.swift */,
 				EB20E0C1CCC2B438DA6252AC /* Info.plist */,
+				E88C3F002C6E2390B122C1BD /* Config.swift */,
 			);
 			name = OneClickTrendShare;
 			path = OneClickTrendShare;
@@ -342,6 +345,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3F620CAC09BB7811782113D5 /* ShareViewController.swift in Sources */,
+				C0F8D76016081575E8283C04 /* Config.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
