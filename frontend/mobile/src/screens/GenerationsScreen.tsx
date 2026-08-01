@@ -4,10 +4,13 @@ import {
   Alert,
   FlatList,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { CameraRoll } from "@react-native-camera-roll/camera-roll";
+import ReactNativeBlobUtil from "react-native-blob-util";
 import Video from "react-native-video";
 import { useFocusEffect } from "@react-navigation/native";
 
@@ -17,6 +20,89 @@ import {
   listGenerations,
 } from "../api/client";
 import type { Generation } from "../types";
+
+async function downloadToCache(id: string): Promise<string> {
+  const path = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/generation-${id}.mp4`;
+  await ReactNativeBlobUtil.config({ path }).fetch(
+    "GET",
+    generationVideoUrl(id),
+  );
+  return `file://${path}`;
+}
+
+function GenerationVideo({ id }: { id: string }) {
+  const [playing, setPlaying] = useState(false);
+  const [busy, setBusy] = useState<"download" | "share" | null>(null);
+
+  const download = async () => {
+    setBusy("download");
+    try {
+      const fileUrl = await downloadToCache(id);
+      await CameraRoll.saveAsset(fileUrl, { type: "video" });
+      Alert.alert("Saved", "Video saved to your photo library.");
+    } catch (e) {
+      console.error("download failed:", e instanceof Error ? e.message : e);
+      Alert.alert("Download failed", e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const share = async () => {
+    setBusy("share");
+    try {
+      const fileUrl = await downloadToCache(id);
+      await Share.share({ url: fileUrl });
+    } catch (e) {
+      console.error("share failed:", e instanceof Error ? e.message : e);
+      Alert.alert("Share failed", e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <View style={styles.videoWrap}>
+      {playing ? (
+        <Video
+          source={{ uri: generationVideoUrl(id) }}
+          style={styles.video}
+          controls
+          resizeMode="contain"
+        />
+      ) : (
+        <Pressable style={styles.videoPlaceholder} onPress={() => setPlaying(true)}>
+          <Text style={styles.playIcon}>▶</Text>
+          <Text style={styles.playLabel}>Tap to play</Text>
+        </Pressable>
+      )}
+      <View style={styles.videoActions}>
+        <Pressable
+          style={[styles.actionButton, busy != null && styles.actionDisabled]}
+          onPress={download}
+          disabled={busy != null}
+        >
+          {busy === "download" ? (
+            <ActivityIndicator size="small" color="#111" />
+          ) : (
+            <Text style={styles.actionText}>Download</Text>
+          )}
+        </Pressable>
+        <Pressable
+          style={[styles.actionButton, busy != null && styles.actionDisabled]}
+          onPress={share}
+          disabled={busy != null}
+        >
+          {busy === "share" ? (
+            <ActivityIndicator size="small" color="#111" />
+          ) : (
+            <Text style={styles.actionText}>Share</Text>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 function GenerationsScreen() {
   const [generations, setGenerations] = useState<Generation[]>([]);
@@ -108,15 +194,7 @@ function GenerationsScreen() {
                 {item.error}
               </Text>
             )}
-            {item.status === "completed" && (
-              <Video
-                source={{ uri: generationVideoUrl(item.id) }}
-                style={styles.video}
-                controls
-                paused
-                resizeMode="contain"
-              />
-            )}
+            {item.status === "completed" && <GenerationVideo id={item.id} />}
           </View>
         )}
         ListEmptyComponent={
@@ -157,13 +235,34 @@ const styles = StyleSheet.create({
   statusCompleted: { color: "#0a7d33" },
   source: { fontSize: 12, color: "#666" },
   errorDetail: { fontSize: 12, color: "#c00" },
+  videoWrap: { gap: 8, marginTop: 4 },
   video: {
     width: "100%",
     aspectRatio: 9 / 16,
     borderRadius: 10,
     backgroundColor: "#000",
-    marginTop: 4,
   },
+  videoPlaceholder: {
+    width: "100%",
+    aspectRatio: 9 / 16,
+    borderRadius: 10,
+    backgroundColor: "#111",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  playIcon: { color: "#fff", fontSize: 42 },
+  playLabel: { color: "#aaa", fontSize: 14 },
+  videoActions: { flexDirection: "row", gap: 12 },
+  actionButton: {
+    flex: 1,
+    backgroundColor: "#e5e5ea",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  actionDisabled: { opacity: 0.5 },
+  actionText: { fontSize: 15, fontWeight: "600", color: "#111" },
   date: { fontSize: 12, color: "#666" },
   empty: { textAlign: "center", color: "#999", marginTop: 48, fontSize: 16 },
   error: { color: "#c00", textAlign: "center", padding: 8 },
