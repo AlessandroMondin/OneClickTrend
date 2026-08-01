@@ -26,7 +26,9 @@ export interface Generation {
   id: string;
   characterId: string | null;
   status: string;
+  outputKind?: string;
   outputS3Key?: string | null;
+  outputS3Keys?: string[] | null;
   error?: string | null;
   createdAt: string;
   sharedLink?: {

@@ -441,16 +441,36 @@ app.delete("/generations/:id", wrap(async (req, res) => {
     return;
   }
   await prisma.generation.delete({ where: { id: generation.id } });
-  if (generation.outputS3Key) {
+  const keys = [
+    ...(generation.outputS3Key ? [generation.outputS3Key] : []),
+    ...(((generation.outputS3Keys as string[] | null) ?? [])),
+  ];
+  for (const key of keys) {
     try {
-      await s3.send(
-        new DeleteObjectCommand({ Bucket: BUCKET, Key: generation.outputS3Key }),
-      );
+      await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
     } catch (err) {
-      apiLog(`WARN could not delete s3 object ${generation.outputS3Key}: ${err}`);
+      apiLog(`WARN could not delete s3 object ${key}: ${err}`);
     }
   }
   res.status(204).end();
+}));
+
+app.get("/generations/:id/photo/:index", wrap(async (req, res) => {
+  const generation = await prisma.generation.findUnique({
+    where: { id: req.params.id },
+  });
+  const keys = (generation?.outputS3Keys as string[] | null) ?? [];
+  const key = keys[Number(req.params.index)];
+  if (!key) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+  const obj = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+  res.setHeader("Content-Type", "image/png");
+  if (obj.ContentLength != null) {
+    res.setHeader("Content-Length", obj.ContentLength);
+  }
+  (obj.Body as Readable).pipe(res);
 }));
 
 app.get("/generations/:id/video", wrap(async (req, res) => {

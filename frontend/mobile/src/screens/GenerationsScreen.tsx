@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import {
   deleteGeneration,
+  generationPhotoUrl,
   generationVideoUrl,
   listGenerations,
 } from "../api/client";
@@ -93,12 +94,18 @@ function GenerationsScreen({ navigation }: Props) {
                 <Text style={styles.thumbnailGlyph}>♪</Text>
               </View>
             )}
-            {item.status === "completed" && (
-              <VideoThumbnail
-                uri={generationVideoUrl(item.id)}
-                style={styles.thumbnail}
-              />
-            )}
+            {item.status === "completed" &&
+              (item.outputKind === "photos" ? (
+                <Image
+                  source={{ uri: generationPhotoUrl(item.id, 0) }}
+                  style={styles.thumbnail}
+                />
+              ) : (
+                <VideoThumbnail
+                  uri={generationVideoUrl(item.id)}
+                  style={styles.thumbnail}
+                />
+              ))}
             <View style={styles.info}>
               <View style={styles.statusRow}>
                 {item.status === "running" && (

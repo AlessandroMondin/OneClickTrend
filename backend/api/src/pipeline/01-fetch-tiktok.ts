@@ -32,11 +32,7 @@ export async function fetchTikTok(
   }
 
   if (post.kind === "photo") {
-    throw new Error(
-      `This is a photo carousel, not a video (${post.canonicalUrl}). ` +
-        "Viggle transfers motion from a driving video, so a slideshow has nothing to animate. " +
-        "Try a video post instead.",
-    );
+    info("photo carousel — will face-swap each image instead of rendering video");
   }
 
   const dir = await runDir(post.postId);
@@ -61,10 +57,47 @@ export async function fetchTikTok(
   info(`cost: ${run.usageTotalUsd != null ? `$${run.usageTotalUsd.toFixed(4)}` : "not reported"}`);
   detail(`saved ${dir.display(FILES.item)} and ${dir.display(FILES.run)}`);
 
-  assertVideoPost(item);
+  if (post.kind === "photo" || item.isSlideshow) {
+    assertPhotoPost(item);
+  } else {
+    assertVideoPost(item);
+  }
   describeItem(item);
 
   return { post, item, run, dir, cached: false };
+}
+
+/** The carousel images the actor returned; empty for video posts. */
+export function carouselImageUrls(item: TikTokItem): string[] {
+  const links = (item.slideshowImageLinks ?? [])
+    .map((entry) => {
+      if (typeof entry === "string") {
+        return entry;
+      }
+      const record = entry as Record<string, unknown>;
+      return (
+        (record.downloadLink as string | undefined) ??
+        (record.imageURL as string | undefined) ??
+        (record.url as string | undefined)
+      );
+    })
+    .filter((u): u is string => typeof u === "string" && u.length > 0);
+  if (links.length > 0) {
+    return links;
+  }
+  return (item.mediaUrls ?? []).filter(
+    (u): u is string => typeof u === "string" && u.length > 0,
+  );
+}
+
+function assertPhotoPost(item: TikTokItem): void {
+  const images = carouselImageUrls(item);
+  if (images.length === 0) {
+    throw new Error(
+      "The actor returned no slideshow image links for this photo post.",
+    );
+  }
+  ok(`Carousel with ${images.length} image(s)`);
 }
 
 function assertVideoPost(item: TikTokItem): void {

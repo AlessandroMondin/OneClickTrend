@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -16,7 +17,11 @@ import Video, { VideoRef } from "react-native-video";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { generationVideoUrl, getGeneration } from "../api/client";
+import {
+  generationPhotoUrl,
+  generationVideoUrl,
+  getGeneration,
+} from "../api/client";
 import VideoThumbnail from "../components/VideoThumbnail";
 import type { GenerationsStackParamList } from "../navigation";
 import type { Generation } from "../types";
@@ -33,6 +38,80 @@ async function downloadToCache(id: string): Promise<string> {
     generationVideoUrl(id),
   );
   return `file://${path}`;
+}
+
+async function downloadPhotoToCache(id: string, index: number): Promise<string> {
+  const path = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/generation-${id}-${index}.png`;
+  await ReactNativeBlobUtil.config({ path }).fetch(
+    "GET",
+    generationPhotoUrl(id, index),
+  );
+  return `file://${path}`;
+}
+
+function GeneratedPhoto({ id, index }: { id: string; index: number }) {
+  const [busy, setBusy] = useState<"download" | "share" | null>(null);
+
+  const download = async () => {
+    setBusy("download");
+    try {
+      const fileUrl = await downloadPhotoToCache(id, index);
+      await CameraRoll.saveAsset(fileUrl, { type: "photo" });
+      Alert.alert("Saved", "Photo saved to your photo library.");
+    } catch (e) {
+      console.error("photo download failed:", e instanceof Error ? e.message : e);
+      Alert.alert("Download failed", e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const share = async () => {
+    setBusy("share");
+    try {
+      const fileUrl = await downloadPhotoToCache(id, index);
+      await Share.share({ url: fileUrl });
+    } catch (e) {
+      console.error("photo share failed:", e instanceof Error ? e.message : e);
+      Alert.alert("Share failed", e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <View style={styles.photoWrap}>
+      <Image
+        source={{ uri: generationPhotoUrl(id, index) }}
+        style={styles.photo}
+        resizeMode="cover"
+      />
+      <View style={styles.actions}>
+        <Pressable
+          style={[styles.actionButton, busy != null && styles.disabled]}
+          onPress={download}
+          disabled={busy != null}
+        >
+          {busy === "download" ? (
+            <ActivityIndicator size="small" color="#111" />
+          ) : (
+            <Text style={styles.actionText}>Download</Text>
+          )}
+        </Pressable>
+        <Pressable
+          style={[styles.actionButton, busy != null && styles.disabled]}
+          onPress={share}
+          disabled={busy != null}
+        >
+          {busy === "share" ? (
+            <ActivityIndicator size="small" color="#111" />
+          ) : (
+            <Text style={styles.actionText}>Share</Text>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
 }
 
 function GenerationDetailScreen({ route }: Props) {
@@ -111,7 +190,15 @@ function GenerationDetailScreen({ route }: Props) {
         </View>
       )}
 
-      {generation.status === "completed" ? (
+      {generation.status === "completed" &&
+      generation.outputKind === "photos" ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Generated Photos:</Text>
+          {(generation.outputS3Keys ?? []).map((_, index) => (
+            <GeneratedPhoto key={index} id={id} index={index} />
+          ))}
+        </View>
+      ) : generation.status === "completed" ? (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Play Generated Content:</Text>
           {playing ? (
@@ -222,6 +309,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.25)",
   },
   playIcon: { color: "#fff", fontSize: 48 },
+  photoWrap: { gap: 8, marginBottom: 8 },
+  photo: {
+    width: "100%",
+    aspectRatio: 3 / 4,
+    borderRadius: 12,
+    backgroundColor: "#f2f2f7",
+  },
   actions: { flexDirection: "row", gap: 12 },
   actionButton: {
     flex: 1,

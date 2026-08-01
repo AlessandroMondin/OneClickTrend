@@ -30,6 +30,11 @@ export const env = {
   get viggleApiKey(): string {
     return required("VIGGLE_API_KEY");
   },
+  get geminiApiKey(): string {
+    return required("GEMINI_API_KEY");
+  },
+  /** Nano Banana 2; NANO_BANANA_MODEL overrides (e.g. gemini-3-pro-image). */
+  nanoBananaModel: process.env.NANO_BANANA_MODEL?.trim() || "gemini-3.1-flash-image",
   /** clockworks/tiktok-scraper */
   actorId: process.env.APIFY_ACTOR_ID?.trim() || "GdWCkxBtKWOsKjdch",
   viggleBaseUrl: (process.env.VIGGLE_BASE_URL?.trim() || "https://apis.viggle.ai").replace(/\/$/, ""),

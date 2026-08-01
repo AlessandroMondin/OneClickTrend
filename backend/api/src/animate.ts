@@ -50,6 +50,33 @@ export async function runAnimationJob(
     const imagePath = await downloadCharacterPhoto(photo);
     const report = await runPipeline(link.url, { imagePath });
 
+    if (report.photoOutputs?.length) {
+      // Photo carousel: upload the swapped image set.
+      const keys: string[] = [];
+      for (let i = 0; i < report.photoOutputs.length; i += 1) {
+        const key = `renders/${generationId}/photo-${i + 1}.png`;
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: BUCKET,
+            Key: key,
+            Body: await fs.promises.readFile(report.photoOutputs[i]!),
+            ContentType: "image/png",
+          }),
+        );
+        keys.push(key);
+      }
+      await prisma.generation.update({
+        where: { id: generationId },
+        data: {
+          status: "completed",
+          outputKind: "photos",
+          outputS3Keys: keys,
+        },
+      });
+      apiLog(`animate ${generationId} completed -> ${keys.length} photo(s)`);
+      return;
+    }
+
     const videoPath = report.outputs.renderVideo;
     if (!videoPath || !fs.existsSync(videoPath)) {
       throw new Error("pipeline finished but produced no render video");
