@@ -63,15 +63,24 @@ class ShareViewController: UIViewController {
     }
   }
 
+  private func openMainApp(_ url: URL) {
+    extensionContext?.open(url) { success in
+      self.remoteLog("extensionContext.open success=\(success)")
+      if !success {
+        self.openViaResponderChain(url)
+      }
+    }
+  }
+
   // UIApplication.shared is unavailable in extensions; walk the responder
   // chain and call openURL: on the application object instead.
-  private func openMainApp(_ url: URL) {
+  private func openViaResponderChain(_ url: URL) {
     let selector = sel_registerName("openURL:")
     var responder: UIResponder? = self
     while let current = responder {
       if current.responds(to: selector), current is UIApplication {
         current.perform(selector, with: url)
-        remoteLog("opened main app via responder chain")
+        remoteLog("attempted open via responder chain")
         return
       }
       responder = current.next
