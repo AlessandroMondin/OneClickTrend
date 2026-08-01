@@ -118,7 +118,7 @@ function SharedLinksScreen() {
               onPress={() => Linking.openURL(item.url)}
             >
               <Text style={styles.url} numberOfLines={2}>
-                {item.title ?? item.url}
+                {item.title || item.url}
               </Text>
               <Text style={styles.date}>
                 {new Date(item.createdAt).toLocaleString()}
