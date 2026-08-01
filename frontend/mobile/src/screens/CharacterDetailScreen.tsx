@@ -14,7 +14,6 @@ import {
   launchCamera,
   launchImageLibrary,
 } from "react-native-image-picker";
-import Video from "react-native-video";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -62,7 +61,6 @@ function CharacterDetailScreen({ route, navigation }: Props) {
   );
 
   const photos = character?.media.filter((m) => m.kind === "PHOTO") ?? [];
-  const video = character?.media.find((m) => m.kind === "VIDEO") ?? null;
 
   const addPicked = async (picked?: Asset[]) => {
     if (!picked?.length || !character) {
@@ -71,24 +69,21 @@ function CharacterDetailScreen({ route, navigation }: Props) {
     const newPhotos = picked
       .filter((a) => !a.type?.startsWith("video/"))
       .slice(0, MAX_PHOTOS - photos.length);
-    const newVideo = video
-      ? null
-      : picked.find((a) => a.type?.startsWith("video/")) ?? null;
 
-    if (newPhotos.length === 0 && !newVideo) {
-      Alert.alert(`Already at ${MAX_PHOTOS} pictures / 1 video`);
+    if (newPhotos.length === 0) {
+      Alert.alert(`Already at ${MAX_PHOTOS} pictures`);
       return;
     }
 
     setBusy(true);
     try {
-      await uploadAssets(character.id, [
-        ...newPhotos.map((asset, i) => ({
+      await uploadAssets(
+        character.id,
+        newPhotos.map((asset, i) => ({
           asset,
           position: photos.length + i,
         })),
-        ...(newVideo ? [{ asset: newVideo, position: 100 }] : []),
-      ]);
+      );
       refetch();
     } catch (e) {
       console.error("add media failed:", e instanceof Error ? e.message : e);
@@ -100,36 +95,15 @@ function CharacterDetailScreen({ route, navigation }: Props) {
 
   const uploadMediaAction = async () => {
     const r = await launchImageLibrary({
-      mediaType: "mixed",
-      selectionLimit: MAX_PHOTOS - photos.length + (video ? 0 : 1),
+      mediaType: "photo",
+      selectionLimit: MAX_PHOTOS - photos.length,
     });
     await addPicked(r.assets);
   };
 
-  const takePhotoOrVideo = () => {
-    Alert.alert("Take Photo or Video", undefined, [
-      {
-        text: "Photo",
-        onPress: async () => {
-          const r = await launchCamera({
-            mediaType: "photo",
-            saveToPhotos: false,
-          });
-          await addPicked(r.assets);
-        },
-      },
-      {
-        text: "Video",
-        onPress: async () => {
-          const r = await launchCamera({
-            mediaType: "video",
-            saveToPhotos: false,
-          });
-          await addPicked(r.assets);
-        },
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  const takePhoto = async () => {
+    const r = await launchCamera({ mediaType: "photo", saveToPhotos: false });
+    await addPicked(r.assets);
   };
 
   const confirmRemove = (id: string) => {
@@ -163,10 +137,7 @@ function CharacterDetailScreen({ route, navigation }: Props) {
     }
     const orderedPhotos = data.map((d) => d.media);
     // Optimistic: show the new order immediately, then persist.
-    setCharacter({
-      ...character,
-      media: [...orderedPhotos, ...(video ? [video] : [])],
-    });
+    setCharacter({ ...character, media: orderedPhotos });
     try {
       await reorderMedia(
         character.id,
@@ -213,23 +184,6 @@ function CharacterDetailScreen({ route, navigation }: Props) {
             </View>
           )}
         />
-        {video && (
-          <View style={styles.videoWrap}>
-            <Video
-              source={{ uri: mediaUrl(video.url) }}
-              style={styles.videoTile}
-              controls
-              paused
-              resizeMode="cover"
-            />
-            <Pressable
-              style={styles.removeVideoButton}
-              onPress={() => confirmRemove(video.id)}
-            >
-              <Text style={styles.removeVideoText}>Remove video</Text>
-            </Pressable>
-          </View>
-        )}
         {!character?.media.length && (
           <Text style={styles.empty}>No media</Text>
         )}
@@ -244,10 +198,10 @@ function CharacterDetailScreen({ route, navigation }: Props) {
         </Pressable>
         <Pressable
           style={[styles.pickerButton, busy && styles.disabled]}
-          onPress={takePhotoOrVideo}
+          onPress={takePhoto}
           disabled={busy}
         >
-          <Text style={styles.pickerText}>Take Photo or Video</Text>
+          <Text style={styles.pickerText}>Take Photo</Text>
         </Pressable>
       </View>
     </View>
@@ -275,15 +229,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   mainBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  videoWrap: { gap: 4 },
-  videoTile: {
-    width: "100%",
-    aspectRatio: 16 / 9,
-    borderRadius: 12,
-    backgroundColor: "#f2f2f7",
-  },
-  removeVideoButton: { alignSelf: "center", padding: 8 },
-  removeVideoText: { color: "#c00", fontSize: 14 },
   empty: { textAlign: "center", color: "#999", marginTop: 48, fontSize: 16 },
   error: { color: "#c00", textAlign: "center", padding: 8 },
   pickerRow: { flexDirection: "row", gap: 12, padding: 16 },

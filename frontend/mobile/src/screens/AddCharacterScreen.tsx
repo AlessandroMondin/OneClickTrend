@@ -34,7 +34,6 @@ interface GridItem {
 function AddCharacterScreen({ navigation }: Props) {
   const [name, setName] = useState("");
   const [photos, setPhotos] = useState<Asset[]>([]);
-  const [video, setVideo] = useState<Asset | null>(null);
   const [saving, setSaving] = useState(false);
 
   const addAssets = (picked?: Asset[]) => {
@@ -42,8 +41,6 @@ function AddCharacterScreen({ navigation }: Props) {
       return;
     }
     const newPhotos = picked.filter((a) => !a.type?.startsWith("video/"));
-    const newVideos = picked.filter((a) => a.type?.startsWith("video/"));
-
     setPhotos((prev) => {
       const merged = [...prev, ...newPhotos];
       if (merged.length > MAX_PHOTOS) {
@@ -51,46 +48,19 @@ function AddCharacterScreen({ navigation }: Props) {
       }
       return merged.slice(0, MAX_PHOTOS);
     });
-    if (newVideos.length > 0) {
-      if (video) {
-        Alert.alert("Only one video");
-      }
-      setVideo(newVideos[0]);
-    }
   };
 
   const uploadMedia = async () => {
     const r = await launchImageLibrary({
-      mediaType: "mixed",
-      selectionLimit: MAX_PHOTOS + 1,
+      mediaType: "photo",
+      selectionLimit: MAX_PHOTOS,
     });
     addAssets(r.assets);
   };
 
-  const takePhotoOrVideo = () => {
-    Alert.alert("Take Photo or Video", undefined, [
-      {
-        text: "Photo",
-        onPress: async () => {
-          const r = await launchCamera({
-            mediaType: "photo",
-            saveToPhotos: false,
-          });
-          addAssets(r.assets);
-        },
-      },
-      {
-        text: "Video",
-        onPress: async () => {
-          const r = await launchCamera({
-            mediaType: "video",
-            saveToPhotos: false,
-          });
-          addAssets(r.assets);
-        },
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  const takePhoto = async () => {
+    const r = await launchCamera({ mediaType: "photo", saveToPhotos: false });
+    addAssets(r.assets);
   };
 
   const confirmRemovePhoto = (key: string) => {
@@ -113,10 +83,10 @@ function AddCharacterScreen({ navigation }: Props) {
     setSaving(true);
     try {
       const character = await createCharacter(name.trim());
-      await uploadAssets(character.id, [
-        ...photos.map((asset, i) => ({ asset, position: i })),
-        ...(video ? [{ asset: video, position: 100 }] : []),
-      ]);
+      await uploadAssets(
+        character.id,
+        photos.map((asset, i) => ({ asset, position: i })),
+      );
       navigation.goBack();
     } catch (e) {
       console.error(
@@ -148,14 +118,14 @@ function AddCharacterScreen({ navigation }: Props) {
         <Pressable style={styles.pickerButton} onPress={uploadMedia}>
           <Text style={styles.pickerText}>Upload Media</Text>
         </Pressable>
-        <Pressable style={styles.pickerButton} onPress={takePhotoOrVideo}>
-          <Text style={styles.pickerText}>Take Photo or Video</Text>
+        <Pressable style={styles.pickerButton} onPress={takePhoto}>
+          <Text style={styles.pickerText}>Take Photo</Text>
         </Pressable>
       </View>
 
       <Text style={styles.hint}>
-        Up to {MAX_PHOTOS} pictures and 1 video. Drag to reorder — the first
-        picture is the character image. Tap a picture to remove it.
+        Up to {MAX_PHOTOS} pictures. Drag to reorder — the first picture is the
+        character image. Tap a picture to remove it.
       </Text>
 
       {photos.length > 0 && (
@@ -176,20 +146,6 @@ function AddCharacterScreen({ navigation }: Props) {
             </View>
           )}
         />
-      )}
-
-      {video && (
-        <View style={styles.videoRow}>
-          <View style={[styles.thumb, styles.videoThumb, styles.videoTile]}>
-            <Text style={styles.videoLabel}>VIDEO</Text>
-          </View>
-          <Pressable
-            style={styles.removeVideoButton}
-            onPress={() => setVideo(null)}
-          >
-            <Text style={styles.removeVideoText}>Remove video</Text>
-          </Pressable>
-        </View>
       )}
 
       <Pressable
@@ -239,16 +195,6 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   mainBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
-  videoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  videoTile: { width: 80, height: 80 },
-  videoThumb: {
-    backgroundColor: "#111",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  videoLabel: { color: "#fff", fontSize: 12, fontWeight: "700" },
-  removeVideoButton: { padding: 8 },
-  removeVideoText: { color: "#c00", fontSize: 14 },
   saveButton: {
     backgroundColor: "#111",
     borderRadius: 12,
