@@ -91,16 +91,14 @@ export async function swapPhotos(
   };
   info(`face: ${basename(facePath)} · ${urls.length} carousel image(s)`);
 
-  const paths: string[] = [];
   let cachedCount = 0;
 
-  for (let index = 0; index < urls.length; index += 1) {
+  const swapOne = async (index: number): Promise<string> => {
     const outName = `swapped-${index + 1}.png`;
     if (!options.force && (await dir.exists(outName))) {
       ok(`${outName} cached — pass --force to redo`);
-      paths.push(dir.file(outName));
       cachedCount += 1;
-      continue;
+      return dir.file(outName);
     }
 
     const srcName = `carousel-${index + 1}.jpg`;
@@ -122,8 +120,22 @@ export async function swapPhotos(
     const edited = await editImage(face, target, SWAP_PROMPT);
     await dir.writeBytes(outName, edited);
     ok(`${outName} (${formatMs(swapTimer())})`);
-    paths.push(dir.file(outName));
-  }
+    return dir.file(outName);
+  };
+
+  // Swap in parallel, capped so Gemini rate limits don't bite.
+  const CONCURRENCY = 4;
+  const paths = new Array<string>(urls.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, urls.length) }, async () => {
+      while (next < urls.length) {
+        const index = next;
+        next += 1;
+        paths[index] = await swapOne(index);
+      }
+    }),
+  );
 
   const soundPath = await downloadSound(item, dir);
 
