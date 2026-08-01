@@ -19,7 +19,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import {
-  deleteCharacter,
   deleteMedia,
   getCharacter,
   mediaUrl,
@@ -55,43 +54,11 @@ function CharacterDetailScreen({ route, navigation }: Props) {
       .catch((e) => setError(String(e.message ?? e)));
   }, [route.params.id]);
 
-  const confirmDeleteCharacter = useCallback(() => {
-    Alert.alert(`Delete ${route.params.name}?`, "This removes all its media.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteCharacter(route.params.id);
-            navigation.goBack();
-          } catch (e) {
-            console.error(
-              "delete character failed:",
-              e instanceof Error ? e.message : e,
-            );
-            Alert.alert(
-              "Delete failed",
-              e instanceof Error ? e.message : String(e),
-            );
-          }
-        },
-      },
-    ]);
-  }, [navigation, route.params.id, route.params.name]);
-
   useFocusEffect(
     useCallback(() => {
-      navigation.setOptions({
-        title: route.params.name,
-        headerRight: () => (
-          <Pressable onPress={confirmDeleteCharacter} hitSlop={8}>
-            <Text style={styles.deleteHeader}>Delete</Text>
-          </Pressable>
-        ),
-      });
+      navigation.setOptions({ title: route.params.name });
       refetch();
-    }, [navigation, route.params.name, refetch, confirmDeleteCharacter]),
+    }, [navigation, route.params.name, refetch]),
   );
 
   const photos = character?.media.filter((m) => m.kind === "PHOTO") ?? [];
@@ -329,7 +296,6 @@ const styles = StyleSheet.create({
   },
   pickerText: { fontSize: 15, fontWeight: "500" },
   disabled: { opacity: 0.5 },
-  deleteHeader: { color: "#c00", fontSize: 16 },
 });
 
 export default CharacterDetailScreen;

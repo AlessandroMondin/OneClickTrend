@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
   Pressable,
@@ -10,7 +11,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { listCharacters, mediaUrl } from "../api/client";
+import { deleteCharacter, listCharacters, mediaUrl } from "../api/client";
 import type { CharactersStackParamList } from "../navigation";
 import type { Character } from "../types";
 
@@ -20,16 +21,41 @@ function CharactersListScreen({ navigation }: Props) {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      listCharacters()
-        .then((list) => {
-          setCharacters(list);
-          setError(null);
-        })
-        .catch((e) => setError(String(e.message ?? e)));
-    }, []),
-  );
+  const refetch = useCallback(() => {
+    listCharacters()
+      .then((list) => {
+        setCharacters(list);
+        setError(null);
+      })
+      .catch((e) => setError(String(e.message ?? e)));
+  }, []);
+
+  useFocusEffect(refetch);
+
+  const confirmDelete = (id: string, name: string) => {
+    Alert.alert(`Delete ${name}?`, "This removes all its media.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteCharacter(id);
+            refetch();
+          } catch (e) {
+            console.error(
+              "delete character failed:",
+              e instanceof Error ? e.message : e,
+            );
+            Alert.alert(
+              "Delete failed",
+              e instanceof Error ? e.message : String(e),
+            );
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -63,6 +89,12 @@ function CharactersListScreen({ navigation }: Props) {
             <Text style={styles.count}>
               {item._count?.media ?? 0} media
             </Text>
+            <Pressable
+              hitSlop={8}
+              onPress={() => confirmDelete(item.id, item.name)}
+            >
+              <Text style={styles.deleteText}>✕</Text>
+            </Pressable>
           </Pressable>
         )}
         ListEmptyComponent={
@@ -100,6 +132,7 @@ const styles = StyleSheet.create({
   avatarInitial: { fontSize: 20, fontWeight: "700", color: "#666" },
   name: { fontSize: 17, fontWeight: "600", flex: 1 },
   count: { fontSize: 14, color: "#666" },
+  deleteText: { color: "#c00", fontSize: 16, paddingHorizontal: 4 },
   empty: { textAlign: "center", color: "#999", marginTop: 48, fontSize: 16 },
   error: { color: "#c00", textAlign: "center", padding: 8 },
   addButton: {
