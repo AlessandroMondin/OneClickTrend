@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.turbo/
+.env
+*.log
+
+# iOS
+frontend/mobile/ios/Pods/
+frontend/mobile/ios/build/
+frontend/mobile/ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Android
+frontend/mobile/android/.gradle/
+frontend/mobile/android/app/build/
+frontend/mobile/android/build/
+
+# macOS
+.DS_Store
