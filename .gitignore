@@ -4,6 +4,7 @@ dist/
 .env
 *.log
 backend/api/localstack-data/
+logs/
 packages/database/generated/
 
 # iOS

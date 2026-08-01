@@ -7,6 +7,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createPrismaClient, MediaKind } from "@oneclicktrend/database";
 import express from "express";
 
+import { apiLog, appLog, requestLogger } from "./logging";
 import { BUCKET, s3, s3Presign } from "./s3";
 
 const prisma = createPrismaClient();
@@ -14,20 +15,42 @@ const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
 
 app.use(express.json());
+app.use(requestLogger());
+
+// Device console.log / JS errors land here → logs/app.log.
+app.post("/logs", (req, res) => {
+  appLog(`[${req.body?.level ?? "log"}] ${req.body?.message ?? ""}`);
+  res.status(204).end();
+});
+
+// Express 4 doesn't catch async errors — an unhandled rejection kills the
+// process. Every async route goes through this wrapper.
+type Handler = (req: express.Request, res: express.Response) => Promise<void>;
+const wrap =
+  (fn: Handler): express.RequestHandler =>
+  (req, res) => {
+    fn(req, res).catch((err) => {
+      console.error(`${req.method} ${req.path} failed:`, err);
+      apiLog(`ERROR ${req.method} ${req.path}: ${err?.stack ?? err}`);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "internal error" });
+      }
+    });
+  };
 
 app.get("/hello", (_req, res) => {
   res.json({ message: "hello world" });
 });
 
-app.get("/characters", async (_req, res) => {
+app.get("/characters", wrap(async (_req, res) => {
   const characters = await prisma.character.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { media: true } } },
   });
   res.json(characters);
-});
+}));
 
-app.post("/characters", async (req, res) => {
+app.post("/characters", wrap(async (req, res) => {
   const name = String(req.body?.name ?? "").trim();
   if (!name) {
     res.status(400).json({ error: "name required" });
@@ -35,9 +58,9 @@ app.post("/characters", async (req, res) => {
   }
   const character = await prisma.character.create({ data: { name } });
   res.status(201).json(character);
-});
+}));
 
-app.get("/characters/:id", async (req, res) => {
+app.get("/characters/:id", wrap(async (req, res) => {
   const character = await prisma.character.findUnique({
     where: { id: req.params.id },
     include: { media: { orderBy: { createdAt: "asc" } } },
@@ -50,9 +73,9 @@ app.get("/characters/:id", async (req, res) => {
     ...character,
     media: character.media.map((m) => ({ ...m, url: `/media/${m.id}` })),
   });
-});
+}));
 
-app.post("/characters/:id/media", async (req, res) => {
+app.post("/characters/:id/media", wrap(async (req, res) => {
   const character = await prisma.character.findUnique({
     where: { id: req.params.id },
   });
@@ -99,9 +122,9 @@ app.post("/characters/:id/media", async (req, res) => {
   }
 
   res.status(201).json(created);
-});
+}));
 
-app.get("/media/:id", async (req, res) => {
+app.get("/media/:id", wrap(async (req, res) => {
   const asset = await prisma.mediaAsset.findUnique({
     where: { id: req.params.id },
   });
@@ -130,14 +153,14 @@ app.get("/media/:id", async (req, res) => {
     res.setHeader("Content-Range", obj.ContentRange);
   }
   (obj.Body as Readable).pipe(res);
-});
+}));
 
-app.get("/generations", async (_req, res) => {
+app.get("/generations", wrap(async (_req, res) => {
   const generations = await prisma.generation.findMany({
     orderBy: { createdAt: "desc" },
   });
   res.json(generations);
-});
+}));
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API listening on http://0.0.0.0:${PORT}`);

@@ -37,30 +37,38 @@ function AddCharacterScreen({ navigation }: Props) {
     }
   };
 
-  const pickPhotos = async () => {
+  const uploadMedia = async () => {
     const r = await launchImageLibrary({
-      mediaType: "photo",
+      mediaType: "mixed",
       selectionLimit: 0,
     });
     addAssets(r.assets);
   };
 
-  const pickVideo = async () => {
-    const r = await launchImageLibrary({
-      mediaType: "video",
-      selectionLimit: 1,
-    });
-    addAssets(r.assets);
-  };
-
-  const takePhoto = async () => {
-    const r = await launchCamera({ mediaType: "photo", saveToPhotos: false });
-    addAssets(r.assets);
-  };
-
-  const takeVideo = async () => {
-    const r = await launchCamera({ mediaType: "video", saveToPhotos: false });
-    addAssets(r.assets);
+  const takePhotoOrVideo = () => {
+    Alert.alert("Take Photo or Video", undefined, [
+      {
+        text: "Photo",
+        onPress: async () => {
+          const r = await launchCamera({
+            mediaType: "photo",
+            saveToPhotos: false,
+          });
+          addAssets(r.assets);
+        },
+      },
+      {
+        text: "Video",
+        onPress: async () => {
+          const r = await launchCamera({
+            mediaType: "video",
+            saveToPhotos: false,
+          });
+          addAssets(r.assets);
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   const save = async () => {
@@ -89,6 +97,7 @@ function AddCharacterScreen({ navigation }: Props) {
       }
       navigation.goBack();
     } catch (e) {
+      console.error("save character failed:", e instanceof Error ? `${e.message}` : e);
       Alert.alert("Save failed", e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
@@ -106,19 +115,11 @@ function AddCharacterScreen({ navigation }: Props) {
       />
 
       <View style={styles.pickerRow}>
-        <Pressable style={styles.pickerButton} onPress={pickPhotos}>
-          <Text style={styles.pickerText}>Photos from gallery</Text>
+        <Pressable style={styles.pickerButton} onPress={uploadMedia}>
+          <Text style={styles.pickerText}>Upload Media</Text>
         </Pressable>
-        <Pressable style={styles.pickerButton} onPress={takePhoto}>
-          <Text style={styles.pickerText}>Take photo</Text>
-        </Pressable>
-      </View>
-      <View style={styles.pickerRow}>
-        <Pressable style={styles.pickerButton} onPress={pickVideo}>
-          <Text style={styles.pickerText}>Video from gallery</Text>
-        </Pressable>
-        <Pressable style={styles.pickerButton} onPress={takeVideo}>
-          <Text style={styles.pickerText}>Record video</Text>
+        <Pressable style={styles.pickerButton} onPress={takePhotoOrVideo}>
+          <Text style={styles.pickerText}>Take Photo or Video</Text>
         </Pressable>
       </View>
 

@@ -8,7 +8,9 @@ import type {
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    throw new Error(`API ${res.status}: ${await res.text()}`);
+    const body = await res.text();
+    console.error(`API ${res.status} ${res.url}: ${body}`);
+    throw new Error(`API ${res.status}: ${body}`);
   }
   return res.json();
 }

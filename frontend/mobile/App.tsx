@@ -3,7 +3,10 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
+import { initRemoteLogging } from "./src/log";
 import type { CharactersStackParamList } from "./src/navigation";
+
+initRemoteLogging();
 import AddCharacterScreen from "./src/screens/AddCharacterScreen";
 import CharacterDetailScreen from "./src/screens/CharacterDetailScreen";
 import CharactersListScreen from "./src/screens/CharactersListScreen";
