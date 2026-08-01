@@ -34,6 +34,13 @@ export const env = {
   get runwayApiKey(): string {
     return required("RUNWAYML_API_SECRET");
   },
+  /** Nano Banana, called directly at Google — unrelated to the Gemini model
+   * pipeline v2 reaches through Runway, which uses RUNWAYML_API_SECRET. */
+  get geminiApiKey(): string {
+    return required("GEMINI_API_KEY");
+  },
+  /** Nano Banana 2; NANO_BANANA_MODEL overrides (e.g. gemini-3-pro-image). */
+  nanoBananaModel: process.env.NANO_BANANA_MODEL?.trim() || "gemini-3.1-flash-image",
   /** clockworks/tiktok-scraper */
   actorId: process.env.APIFY_ACTOR_ID?.trim() || "GdWCkxBtKWOsKjdch",
   viggleBaseUrl: (process.env.VIGGLE_BASE_URL?.trim() || "https://apis.viggle.ai").replace(/\/$/, ""),

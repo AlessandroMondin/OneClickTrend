@@ -26,10 +26,17 @@ export interface Generation {
   id: string;
   characterId: string | null;
   status: string;
+  outputKind?: string;
   outputS3Key?: string | null;
+  outputS3Keys?: string[] | null;
   error?: string | null;
   createdAt: string;
-  sharedLink?: { url: string; source: string } | null;
+  sharedLink?: {
+    url: string;
+    source: string;
+    thumbnailUrl?: string | null;
+    title?: string | null;
+  } | null;
 }
 
 export interface UploadTarget {

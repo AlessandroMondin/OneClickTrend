@@ -50,7 +50,9 @@ model Generation {
   sharedLinkId String?
   sharedLink   SharedLink? @relation(fields: [sharedLinkId], references: [id])
   status       String      @default("pending")
+  outputKind   String      @default("video")
   outputS3Key  String?
+  outputS3Keys Json?
   error        String?
   createdAt    DateTime    @default(now())
 }

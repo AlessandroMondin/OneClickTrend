@@ -130,6 +130,14 @@ export function generationVideoUrl(id: string): string {
   return `${API_URL}/generations/${id}/video`;
 }
 
+export function generationPhotoUrl(id: string, index: number): string {
+  return `${API_URL}/generations/${id}/photo/${index}`;
+}
+
+export function getGeneration(id: string): Promise<Generation> {
+  return fetch(`${API_URL}/generations/${id}`).then((r) => json<Generation>(r));
+}
+
 export async function deleteGeneration(id: string): Promise<void> {
   const res = await fetch(`${API_URL}/generations/${id}`, {
     method: "DELETE",

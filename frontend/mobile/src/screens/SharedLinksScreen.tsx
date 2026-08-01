@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import {
   animateSharedLink,
@@ -75,10 +75,14 @@ function SharedLinksScreen() {
     }, [refreshUnseen]),
   );
 
+  const navigation = useNavigation();
+
   const startAnimation = async (link: SharedLink, characterId: string) => {
     try {
       await animateSharedLink(link.id, characterId);
-      Alert.alert("Animation started", "Check My Generations for progress.");
+      (navigation as { navigate: (screen: string) => void }).navigate(
+        "Generations",
+      );
     } catch (e) {
       console.error("animate failed:", e instanceof Error ? e.message : e);
       Alert.alert("Failed", e instanceof Error ? e.message : String(e));

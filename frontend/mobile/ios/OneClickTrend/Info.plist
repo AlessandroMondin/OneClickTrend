@@ -50,6 +50,8 @@
 	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record video with sound.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save generated videos to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Pick photos and videos for your characters.</string>
 	<key>RCTNewArchEnabled</key>

@@ -3,6 +3,7 @@ import { fetchTikTok } from "./01-fetch-tiktok";
 import { downloadVideo } from "./02-download-video";
 import { ensureCharacter } from "./03-create-character";
 import { renderWithFace, type RenderOptions } from "./04-render";
+import { swapPhotos } from "./05-swap-photos";
 import { errorMessage, formatBytes, formatMs, info, ok, step, timer } from "./lib/log";
 import { FILES, type RunDir } from "./lib/run-store";
 
@@ -25,6 +26,8 @@ interface Report {
   costs: { apifyUsd: number | null; viggleCredits: number | null };
   findings: Record<string, string>;
   outputs: Record<string, string>;
+  /** Face-swapped carousel images (photo posts only). */
+  photoOutputs?: string[];
 }
 
 /**
@@ -43,6 +46,7 @@ export async function runPipeline(input: string, options: RenderOptions = {}): P
   let postId: string | null = null;
   let apifyUsd: number | null = null;
   let viggleCredits: number | null = null;
+  let photoOutputs: string[] | undefined;
 
   try {
     await track(steps, "check-keys", () => checkKeys(), (keys) => ({
@@ -70,6 +74,24 @@ export async function runPipeline(input: string, options: RenderOptions = {}): P
       ? `${fetched.run.usageTotalUsd != null ? `$${fetched.run.usageTotalUsd.toFixed(4)}` : "not reported"} in ${formatMs(fetched.run.elapsedMs)} for 1 post.`
       : "Reused a cached dataset item; no actor run this time.";
 
+    const isPhoto = fetched.post.kind === "photo" || fetched.item.isSlideshow === true;
+    if (isPhoto) {
+      if (!options.imagePath) {
+        throw new Error("A character image (--image) is required to face-swap a photo carousel.");
+      }
+      const swapped = await track(
+        steps,
+        "swap-photos",
+        () => swapPhotos(fetched.post.postId, { imagePath: options.imagePath!, force: options.force }),
+        (result) => ({
+          cached: result.cachedCount === result.count,
+          notes: [`${result.count} image(s)`, `${result.cachedCount} cached`],
+        }),
+      );
+      photoOutputs = swapped.paths;
+      outputs.swappedImages = `${swapped.count} image(s)`;
+      findings.carousel = `Photo carousel: face-swapped ${swapped.count} image(s) with Nano Banana instead of a Viggle render.`;
+    } else {
     const downloaded = await track(
       steps,
       "download-video",
@@ -130,6 +152,7 @@ export async function runPipeline(input: string, options: RenderOptions = {}): P
     findings.audioPreserved = `source ${rendered.sourceHasAudio ? "has" : "has no"} audio → render ${
       rendered.hasAudio ? "has" : "has no"
     } audio.`;
+    }
   } finally {
     report = {
       postId,
@@ -141,6 +164,7 @@ export async function runPipeline(input: string, options: RenderOptions = {}): P
       costs: { apifyUsd, viggleCredits },
       findings,
       outputs,
+      ...(photoOutputs && { photoOutputs }),
     };
 
     if (dir) {

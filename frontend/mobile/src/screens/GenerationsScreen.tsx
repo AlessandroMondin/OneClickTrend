@@ -3,22 +3,31 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import Video from "react-native-video";
 import { useFocusEffect } from "@react-navigation/native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import {
   deleteGeneration,
+  generationPhotoUrl,
   generationVideoUrl,
   listGenerations,
 } from "../api/client";
+import VideoThumbnail from "../components/VideoThumbnail";
+import type { GenerationsStackParamList } from "../navigation";
 import type { Generation } from "../types";
 
-function GenerationsScreen() {
+type Props = NativeStackScreenProps<
+  GenerationsStackParamList,
+  "GenerationsList"
+>;
+
+function GenerationsScreen({ navigation }: Props) {
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,8 +78,35 @@ function GenerationsScreen() {
         keyExtractor={(g) => g.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <View style={styles.header}>
+          <Pressable
+            style={styles.row}
+            onPress={() =>
+              navigation.navigate("GenerationDetail", { id: item.id })
+            }
+          >
+            {item.sharedLink?.thumbnailUrl ? (
+              <Image
+                source={{ uri: item.sharedLink.thumbnailUrl }}
+                style={styles.thumbnail}
+              />
+            ) : (
+              <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
+                <Text style={styles.thumbnailGlyph}>♪</Text>
+              </View>
+            )}
+            {item.status === "completed" &&
+              (item.outputKind === "photos" ? (
+                <Image
+                  source={{ uri: generationPhotoUrl(item.id, 0) }}
+                  style={styles.thumbnail}
+                />
+              ) : (
+                <VideoThumbnail
+                  uri={generationVideoUrl(item.id)}
+                  style={styles.thumbnail}
+                />
+              ))}
+            <View style={styles.info}>
               <View style={styles.statusRow}>
                 {item.status === "running" && (
                   <ActivityIndicator size="small" />
@@ -85,39 +121,18 @@ function GenerationsScreen() {
                   {item.status}
                 </Text>
               </View>
-              <View style={styles.headerRight}>
-                <Text style={styles.date}>
-                  {new Date(item.createdAt).toLocaleString()}
-                </Text>
-                <Pressable
-                  style={styles.deleteButton}
-                  hitSlop={6}
-                  onPress={() => confirmDelete(item.id)}
-                >
-                  <Text style={styles.deleteText}>✕</Text>
-                </Pressable>
-              </View>
+              <Text style={styles.date}>
+                {new Date(item.createdAt).toLocaleString()}
+              </Text>
             </View>
-            {item.sharedLink && (
-              <Text style={styles.source} numberOfLines={1}>
-                {item.sharedLink.source}: {item.sharedLink.url}
-              </Text>
-            )}
-            {item.status === "failed" && item.error && (
-              <Text style={styles.errorDetail} numberOfLines={4}>
-                {item.error}
-              </Text>
-            )}
-            {item.status === "completed" && (
-              <Video
-                source={{ uri: generationVideoUrl(item.id) }}
-                style={styles.video}
-                controls
-                paused
-                resizeMode="contain"
-              />
-            )}
-          </View>
+            <Pressable
+              style={styles.deleteButton}
+              hitSlop={6}
+              onPress={() => confirmDelete(item.id)}
+            >
+              <Text style={styles.deleteText}>✕</Text>
+            </Pressable>
+          </Pressable>
         )}
         ListEmptyComponent={
           <Text style={styles.empty}>No generations yet</Text>
@@ -131,40 +146,41 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   list: { padding: 16, gap: 12 },
   row: {
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     backgroundColor: "#f2f2f7",
-    gap: 6,
-  },
-  header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
   },
+  thumbnail: {
+    width: 48,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: "#ddd",
+    overflow: "hidden",
+  },
+  thumbnailPlaceholder: {
+    backgroundColor: "#010101",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  thumbnailGlyph: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  info: { flex: 1, gap: 4 },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: 10 },
+  status: { fontSize: 16, fontWeight: "600" },
+  statusFailed: { color: "#c00" },
+  statusCompleted: { color: "#0a7d33" },
+  date: { fontSize: 12, color: "#666" },
   deleteButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: "#e5e5ea",
     alignItems: "center",
     justifyContent: "center",
   },
-  deleteText: { color: "#c00", fontSize: 12, fontWeight: "700" },
-  status: { fontSize: 16, fontWeight: "600" },
-  statusFailed: { color: "#c00" },
-  statusCompleted: { color: "#0a7d33" },
-  source: { fontSize: 12, color: "#666" },
-  errorDetail: { fontSize: 12, color: "#c00" },
-  video: {
-    width: "100%",
-    aspectRatio: 9 / 16,
-    borderRadius: 10,
-    backgroundColor: "#000",
-    marginTop: 4,
-  },
-  date: { fontSize: 12, color: "#666" },
+  deleteText: { color: "#c00", fontSize: 13, fontWeight: "700" },
   empty: { textAlign: "center", color: "#999", marginTop: 48, fontSize: 16 },
   error: { color: "#c00", textAlign: "center", padding: 8 },
 });
